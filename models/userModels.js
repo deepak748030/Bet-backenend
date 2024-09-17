@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null, // Optional, will be updated based on user activity
     },
+    walletBalance: {
+        type: Number,
+        default: 0,  // Wallet balance starts at 0 by default
+    }
 });
 
 const User = mongoose.model('User', userSchema);

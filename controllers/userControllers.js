@@ -32,6 +32,7 @@ const registerUser = async (req, res) => {
                 mobile: newUser.mobile,
                 isBlocked: newUser.isBlocked,
                 registerDate: newUser.registerDate,
+                walletBalance: newUser.walletBalance,
             },
             token, // JWT token
         });

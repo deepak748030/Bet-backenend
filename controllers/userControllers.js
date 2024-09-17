@@ -41,4 +41,39 @@ const registerUser = async (req, res) => {
     }
 };
 
-module.exports = { registerUser };
+// Login user with mobile number
+const loginUser = async (req, res) => {
+    const { mobile } = req.body;
+
+    try {
+        // Check if user exists by mobile number
+        const user = await User.findOne({ mobile });
+        if (!user) {
+            return res.status(400).json({ message: 'User not registered' });
+        }
+
+        // Generate JWT token (replace 'secretkey' with your actual secret key)
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secretkey', {
+            expiresIn: '1d', // Token expiration time
+        });
+
+        // Respond with user data and token
+        res.status(200).json({
+            message: 'Login successful',
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                isBlocked: user.isBlocked,
+                registerDate: user.registerDate,
+                walletBalance: user.walletBalance,
+            },
+            token, // JWT token
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+module.exports = { registerUser, loginUser };

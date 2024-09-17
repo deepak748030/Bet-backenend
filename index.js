@@ -1,14 +1,13 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');  // Import the CORS middleware
-dotenv.config();
+const connectDB = require('./config/db'); // Database connection
+
+dotenv.config(); // Load environment variables
+
 const app = express();
 
-// Import routes
-const userRoutes = require('./routes/userRoutes');
-
 // Connect to the database
-const connectDB = require('./config/db');
 connectDB();
 
 // Enable CORS for all routes
@@ -19,11 +18,13 @@ app.use(cors({
 // Middleware to parse incoming requests
 app.use(express.json());
 
+// Home route
 app.get('/', (req, res) => {
-    res.send('hello')
-})
+    res.send('Hello from the server!');
+});
+
 // Use the user routes
-app.use('/api/users', userRoutes);
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Start the server
 const PORT = process.env.PORT || 3001;

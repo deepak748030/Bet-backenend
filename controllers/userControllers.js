@@ -76,4 +76,37 @@ const loginUser = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser };
+
+// Get user by userId
+const getUserById = async (req, res) => {
+    const { id } = req.params;  // Extract the userId from request parameters
+
+    try {
+        // Find the user by id
+        const user = await User.findById(id);
+
+        // Check if user exists
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Respond with the user data
+        res.status(200).json({
+            message: 'User retrieved successfully',
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                isBlocked: user.isBlocked,
+                registerDate: user.registerDate,
+                lastActiveDate: user.lastActiveDate,
+                walletBalance: user.walletBalance,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+module.exports = { registerUser, loginUser, getUserById };

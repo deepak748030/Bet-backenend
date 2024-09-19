@@ -11,6 +11,11 @@ const transactionSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  type: {
+    type: String,
+    enum: ['withdraw', 'bet', 'add', 'refund'], // Enum for different transaction types
+    required: true, // Type is required
+  },
   status: {
     type: String,
     enum: ['success', 'failure', 'pending'], // Enum for status

@@ -25,6 +25,7 @@ app.get('/', (req, res) => {
 
 // Use the user routes
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/transaction', require('./routes/transactionRoutes'));
 
 // Start the server
 const PORT = process.env.PORT || 3001;

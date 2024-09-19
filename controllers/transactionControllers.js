@@ -3,20 +3,17 @@ const Transaction = require('../models/transcationModels');
 // Add a new transaction
 const transactionAdd = async (req, res) => {
   try {
-    const { transactionId, userId, type, amount, message, refundDate } = req.body;
+    const { userId, amount, message } = req.body;
 
     // Ensure necessary fields are provided
-    if (!transactionId || !userId || !type || !amount) {
+    if (!userId || !amount) {
       return res.status(400).json({ error: 'Required fields missing' });
     }
 
     const newTransaction = new Transaction({
-      transactionId,
       userId,
-      type,
       amount,
       message,
-      refundDate: type === 'refund' ? refundDate : null,
     });
 
     await newTransaction.save();
@@ -36,8 +33,8 @@ const transactionUpdate = async (req, res) => {
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    const updatedTransaction = await Transaction.findOneAndUpdate(
-      { transactionId: req.params.transactionId },
+    const updatedTransaction = await Transaction.findByIdAndUpdate(
+      req.params.transactionId,
       { status },
       { new: true }
     );
@@ -56,24 +53,21 @@ const transactionUpdate = async (req, res) => {
 // Add a bet transaction
 const betTransaction = async (req, res) => {
   try {
-    const { transactionId, userId, amount, betDetails } = req.body;
+    const { userId, amount, message } = req.body;
 
     // Validate required fields
-    if (!transactionId || !userId || !amount || !betDetails) {
+    if (!userId || !amount) {
       return res.status(400).json({ error: 'Required fields missing' });
     }
 
     const newBet = new Transaction({
-      transactionId,
       userId,
-      type: 'bet',
       amount,
-      betDetails,
-      status: 'pending',
+      message, // Optional field for any bet details
     });
 
     await newBet.save();
-    res.status(201).json({ message: 'Bet placed successfully', bet: newBet });
+    res.status(201).json({ message: 'Bet placed successfully', transaction: newBet });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to place bet' });
@@ -83,32 +77,21 @@ const betTransaction = async (req, res) => {
 // Issue a refund transaction
 const refundTransaction = async (req, res) => {
   try {
-    const { transactionId, userId, refundAmount, originalTransactionId, message } = req.body;
+    const { userId, refundAmount, message } = req.body;
 
     // Validate required fields
-    if (!transactionId || !userId || !refundAmount || !originalTransactionId) {
+    if (!userId || !refundAmount) {
       return res.status(400).json({ error: 'Required fields missing' });
     }
 
-    // Find the original transaction to refund
-    const originalTransaction = await Transaction.findOne({ transactionId: originalTransactionId, userId });
-
-    if (!originalTransaction) {
-      return res.status(404).json({ error: 'Original transaction not found' });
-    }
-
     const refundTransaction = new Transaction({
-      transactionId,
       userId,
-      type: 'refund',
       amount: refundAmount,
-      status: 'pending',
-      message,
-      refundDate: Date.now(),
+      message, // Optional field for any refund message
     });
 
     await refundTransaction.save();
-    res.status(201).json({ message: 'Refund issued successfully', refund: refundTransaction });
+    res.status(201).json({ message: 'Refund issued successfully', transaction: refundTransaction });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to issue refund' });

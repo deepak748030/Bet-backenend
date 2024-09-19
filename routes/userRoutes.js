@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUserById } = require('../controllers/userControllers');
+const { transactionAdd, transactionUpdate, betTransaction, refundTransaction } = require('../controllers/transactionControllers');
 
-router.post('/signup', registerUser);
+// Add a new transaction
+router.post('/add', transactionAdd);
 
-router.post('/login', loginUser);
+// Update transaction status
+router.put('/update/:transactionId', transactionUpdate);
 
+// Place a Bet
+router.post('/bet', betTransaction);
 
-// Get User by userId Route (GET Request)
-router.get('/:id', getUserById);
+// Issue a Refund
+router.post('/refund', refundTransaction);
 
 module.exports = router;

@@ -2,18 +2,9 @@ const mongoose = require('mongoose');
 
 // Define the transaction schema
 const transactionSchema = new mongoose.Schema({
-  transactionId: {
-    type: String,
-    required: true,
-    unique: true,
-  },
   userId: {
-    type: String,
-    required: true,
-  },
-  type: {
-    type: String,
-    enum: ['withdraw', 'refund'],
+    type: mongoose.Schema.Types.ObjectId, // Assuming userId is an ObjectId from the User model
+    ref: 'User', // Reference to the User model
     required: true,
   },
   amount: {
@@ -22,22 +13,16 @@ const transactionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'completed', 'failed'],
-    default: 'pending',
+    enum: ['success', 'failure', 'pending'], // Enum for status
+    default: 'pending', // Default status is pending
   },
   message: {
     type: String,
-    required: false,
-  },
-  refundDate: {
-    type: Date,
-    required: function () {
-      return this.type === 'refund';
-    },
+    required: false, // Optional field for additional information
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now, // Automatically sets the current date on creation
   },
 });
 

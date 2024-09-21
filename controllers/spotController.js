@@ -3,7 +3,7 @@ const Spot = require('../models/spotModels');
 // Create a new spot
 const createSpot = async (req, res) => {
     // Destructure properties from request body
-    const { totalSpot, matchId, contestId, commission } = req.body;
+    const { totalSpot, matchId, contestId, commission, amount } = req.body;
 
     // Validate input data
     if (!totalSpot || typeof totalSpot !== 'number' || totalSpot <= 0) {
@@ -34,9 +34,16 @@ const createSpot = async (req, res) => {
         });
     }
 
+    if (amount === undefined || typeof amount !== 'number' || amount < 0) {
+        return res.status(400).json({
+            msg: 'Amount is required and must be a non-negative number.',
+            status: false,
+        });
+    }
+
     try {
         // Create a new spot instance
-        const newSpot = new Spot({ totalSpot, matchId, contestId, commission });
+        const newSpot = new Spot({ totalSpot, matchId, contestId, commission, amount });
 
         // Save the new spot to the database
         await newSpot.save();
@@ -57,7 +64,6 @@ const createSpot = async (req, res) => {
         });
     }
 };
-
 
 // Get spot by matchId
 const getSpotByMatchId = async (req, res) => {

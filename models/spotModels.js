@@ -17,6 +17,10 @@ const spotSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    amount: {
+        type: Number,   // Add this field for amount
+        required: true,
+    },
 }, { timestamps: true });
 
 const Spot = mongoose.model('Spot', spotSchema);

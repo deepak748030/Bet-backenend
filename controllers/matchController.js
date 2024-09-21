@@ -1,109 +1,108 @@
 const axios = require('axios');
 const NodeCache = require('node-cache');
-const cron = require('node-cron');  // Install node-cron for periodic tasks
 const Match = require('../models/matchModels');
 
 // Initialize cache with a 10-minute TTL
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-// Function to fetch new data and update the database
-const updateMatchData = async () => {
-    console.log('req hit')
+// Function to fetch match data from the API
+const fetchMatchData = async () => {
+    console.log('Fetching match data from external API...');
+
     const options = {
         method: 'GET',
         url: 'https://cricket-live-line1.p.rapidapi.com/upcomingMatches',
         headers: {
-            'x-rapidapi-key': 'd6a439bb1fmshd0b9d1b5a439a28p123e97jsn3b9786fc696b',
+            'x-rapidapi-key': 'd6a439bb1fmshd0b9d1b5a439a28p123e97jsn3b9786fc696b', // Replace with your API key
             'x-rapidapi-host': 'cricket-live-line1.p.rapidapi.com',
         },
     };
 
     try {
-        // Fetch matches from external API
-        console.log('request hit')
         const response = await axios.request(options);
-        const newMatches = response.data.data;  // Assume data is in 'data'
+        const matches = response.data.data;
 
-        // Clear the database before saving new matches
-        await Match.deleteMany({});
-
-
-        // Save new match data to the database
-        const savedMatches = await Match.insertMany(newMatches);
-
-        // Clear the cache after database update
-        cache.flushAll();
-
-        console.log('Match data updated successfully');
-        return savedMatches;
-    } catch (error) {
-        console.error('Error updating match data:', error.message);
-    }
-};
-
-// Function to check the date and time of upcoming matches
-const checkMatchTimes = async () => {
-    const matches = await Match.find();
-
-
-    if (!matches || matches.length === 0) {
-        console.log('No matches found in the database.');
-        return;
-    }
-
-    // Get the current date and time
-    const now = new Date();
-
-    // Loop through each match to compare the date and time
-    for (const match of matches) {
-        const matchDate = new Date(`${match.dateWise} ${match.matchTime}`);
-
-        // If current time matches the match time, update the match data
-        if (now >= matchDate) {
-            console.log(`Updating match data for ${match.series} at ${match.venue}`);
-
-            // Call the function to update match data
-            await updateMatchData();
-            break;
+        if (!matches || matches.length === 0) {
+            console.log('No data returned from the API.');
+            throw new Error('No matches found.');
         }
-    }
-};
 
-// Schedule this function to run every minute using cron
-cron.schedule('* * * * *', () => {
-    console.log('Checking for matches to update...');
-    checkMatchTimes();
-});
-
-// Controller to handle fetching matches from cache or API
-const getUpcomingMatches = async (req, res) => {
-    const cacheKey = 'upcomingMatches';
-
-    // Check if data is available in the cache
-    const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-        return res.status(200).json({
-            msg: 'Data fetched from cache.',
-            status: true,
-            data: cachedData,
-        });
-    }
-
-    try {
-        // Fetch data from the database
-        const matches = await Match.find();
-
-        // Cache the data for faster future requests
-        cache.set(cacheKey, matches);
-
-        res.status(200).json({
-            msg: 'Data fetched from the database.',
-            status: true,
-            data: matches,
-        });
+        return matches;
     } catch (error) {
         console.error('Error fetching match data:', error.message);
-        res.status(500).json({ error: 'Failed to fetch match data' });
+        throw new Error('Failed to fetch match data.');
+    }
+};
+
+// API Controller to fetch matches, save to database, and send to user
+const getUpcomingMatches = async (req, res) => {
+    try {
+        // Check cache first
+        const cachedData = cache.get('upcomingMatches');
+        if (cachedData) {
+            return res.status(200).json({
+                msg: 'Data fetched from cache.',
+                status: true,
+                data: cachedData,
+            });
+        }
+
+        // Fetch match data from the API
+        const matchData = await fetchMatchData();
+
+        // Clear the old data in the database
+        await Match.deleteMany({});
+
+        // Prepare matches to save in the correct format
+        const matchesToSave = matchData.map(match => ({
+            matchId: match.match_id,
+            series: match.series,
+            matchType: match.match_type,
+            matchDate: match.match_date,
+            matchTime: match.match_time,
+            matchStatus: match.match_status,
+            venue: match.venue,
+            teamA: {
+                name: match.team_a,
+                short: match.team_a_short,
+                id: match.team_a_id,
+                img: match.team_a_img,
+            },
+            teamB: {
+                name: match.team_b,
+                short: match.team_b_short,
+                id: match.team_b_id,
+                img: match.team_b_img,
+            },
+            favTeam: match.fav_team,
+            seriesType: match.series_type,
+            seriesId: match.series_id,
+            venueId: match.venue_id,
+            isHundred: match.is_hundred === 1, // Assuming 1 for true
+            maxRate: match.max_rate,
+            minRate: match.min_rate,
+            dateWise: match.date_wise,
+            matchs: match.matchs,
+        }));
+
+        // Save new matches to the database
+        await Match.insertMany(matchesToSave);
+
+        // Update cache with the new matches
+        cache.set('upcomingMatches', matchesToSave);
+
+        res.status(200).json({
+            msg: 'Data fetched from API and saved successfully.',
+            status: true,
+            data: matchesToSave,
+        });
+    } catch (error) {
+        console.error('Error processing matches:', error.message);
+        res.status(500).json({
+            msg: 'Error fetching upcoming matches.',
+            status: false,
+            error: error.message,
+        });
     }
 };
 

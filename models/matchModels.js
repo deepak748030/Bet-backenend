@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const matchSchema = new mongoose.Schema({
     matchId: {
         type: Number,
-        required: true,
         unique: true,
     },
     series: String,
@@ -13,14 +12,18 @@ const matchSchema = new mongoose.Schema({
     matchTime: String,
     matchStatus: String,
     venue: String,
-    teamA: String,
-    teamAShort: String,
-    teamAId: Number,
-    teamAImg: String,
-    teamB: String,
-    teamBShort: String,
-    teamBId: Number,
-    teamBImg: String,
+    teamA: {
+        name: String,
+        short: String,
+        id: Number,
+        img: String,
+    },
+    teamB: {
+        name: String,
+        short: String,
+        id: Number,
+        img: String,
+    },
     favTeam: String,
     seriesType: String,
     seriesId: Number,
@@ -32,6 +35,7 @@ const matchSchema = new mongoose.Schema({
     matchs: String,
 });
 
+// Create the model
 const Match = mongoose.model('Match', matchSchema);
 
 module.exports = Match;

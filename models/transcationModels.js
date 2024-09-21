@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 // Define the transaction schema
 const transactionSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId, // Assuming userId is an ObjectId from the User model
+    type: mongoose.Schema.Types.ObjectId, // Properly defining ObjectId type
     ref: 'User', // Reference to the User model
     required: true,
   },
@@ -13,7 +13,7 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['withdraw', 'bet', 'add', 'refund'], // Enum for different transaction types
+    enum: ['withdraw', 'bet', 'add', 'refund', 'deposit'], // Enum for different transaction types
     required: true, // Type is required
   },
   status: {
@@ -23,7 +23,7 @@ const transactionSchema = new mongoose.Schema({
   },
   message: {
     type: String,
-    required: false, // Optional field for additional information
+    default: null, // Optional field for additional information
   },
   createdAt: {
     type: Date,
@@ -31,7 +31,7 @@ const transactionSchema = new mongoose.Schema({
   },
 });
 
-// Create the model
+// Create the Transaction model
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
 module.exports = Transaction;

@@ -1,11 +1,12 @@
 const Transaction = require('../models/transcationModels');
 
-// Add a new transaction
+// Add a new deposit transaction
 const transactionAdd = async (req, res) => {
   try {
     const { userId, amount, message } = req.body;
+    console.log(userId, amount, message)
 
-    // Ensure necessary fields are provided
+    // Validate required fields
     if (!userId || !amount) {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
@@ -16,21 +17,22 @@ const transactionAdd = async (req, res) => {
       type: 'deposit', // Default to a deposit transaction type
       message,
     });
-
+    console.log(newTransaction)
+    // Save the transaction
     await newTransaction.save();
-    res.status(201).json({ message: 'Transaction created successfully', transaction: newTransaction });
+    res.status(201).json({ message: 'Deposit transaction created successfully', transaction: newTransaction });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to create transaction' });
+    console.error('Error creating deposit transaction:', error.message);
+    res.status(500).json({ error: 'Failed to create deposit transaction' });
   }
 };
 
-// Withdraw transaction
+// Add a new withdraw transaction
 const withdrawTransaction = async (req, res) => {
   try {
     const { userId, amount, message } = req.body;
 
-    // Ensure necessary fields are provided
+    // Validate required fields
     if (!userId || !amount) {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
@@ -38,20 +40,21 @@ const withdrawTransaction = async (req, res) => {
     const newWithdraw = new Transaction({
       userId,
       amount,
-      type: 'withdraw', // Set the transaction type to withdraw
+      type: 'withdraw', // Set transaction type to withdraw
       status: 'pending',
       message,
     });
 
+    // Save the transaction
     await newWithdraw.save();
     res.status(201).json({ message: 'Withdrawal transaction created successfully', transaction: newWithdraw });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to create withdrawal transaction' });
+    console.error('Error creating withdraw transaction:', error.message);
+    res.status(500).json({ error: 'Failed to create withdraw transaction' });
   }
 };
 
-// Add a bet transaction
+// Add a new bet transaction
 const betTransaction = async (req, res) => {
   try {
     const { userId, amount, message } = req.body;
@@ -64,16 +67,17 @@ const betTransaction = async (req, res) => {
     const newBet = new Transaction({
       userId,
       amount,
-      type: 'bet', // Set the transaction type to bet
+      type: 'bet', // Set transaction type to bet
       status: 'pending',
-      message, // Optional field for any bet details
+      message,
     });
 
+    // Save the transaction
     await newBet.save();
-    res.status(201).json({ message: 'Bet placed successfully', transaction: newBet });
+    res.status(201).json({ message: 'Bet transaction created successfully', transaction: newBet });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to place bet' });
+    console.error('Error creating bet transaction:', error.message);
+    res.status(500).json({ error: 'Failed to create bet transaction' });
   }
 };
 
@@ -87,20 +91,22 @@ const refundTransaction = async (req, res) => {
       return res.status(400).json({ error: 'User ID and refund amount are required' });
     }
 
-    const refundTransaction = new Transaction({
+    const refundTrans = new Transaction({
       userId,
       amount: refundAmount,
-      type: 'refund', // Set the transaction type to refund
+      type: 'refund', // Set transaction type to refund
       status: 'pending',
-      message, // Optional field for any refund details
+      message,
     });
 
-    await refundTransaction.save();
-    res.status(201).json({ message: 'Refund issued successfully', transaction: refundTransaction });
+    // Save the transaction
+    await refundTrans.save();
+    res.status(201).json({ message: 'Refund transaction issued successfully', transaction: refundTrans });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to issue refund' });
+    console.error('Error creating refund transaction:', error.message);
+    res.status(500).json({ error: 'Failed to issue refund transaction' });
   }
 };
 
+// Export the controller functions
 module.exports = { transactionAdd, withdrawTransaction, betTransaction, refundTransaction };

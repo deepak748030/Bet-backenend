@@ -62,6 +62,35 @@ const createSpot = async (req, res) => {
     }
 };
 
+// Get spot by matchId
+const getSpotByMatchId = async (req, res) => {
+    const { matchId } = req.params;
+
+    try {
+        // Find spots based on the provided matchId
+        const spots = await Spot.find({ matchId });
+
+        // If no spots found, return a 404 error
+        if (!spots || spots.length === 0) {
+            return res.status(404).json({
+                msg: 'No spots found for the given match ID.',
+                status: false,
+            });
+        }
+
+        // Respond with the found spots
+        return res.status(200).json({
+            msg: 'Spots found successfully.',
+            status: true,
+            data: spots,
+        });
+    } catch (error) {
+        console.error('Error fetching spots:', error.message);
+        return res.status(500).json({ error: 'Error fetching spots' });
+    }
+};
+
+
 // Get spot by ID
 const getSpotById = async (req, res) => {
     const { id } = req.params;  // Assuming the ID is passed as a parameter in the request URL
@@ -104,4 +133,4 @@ const getSpotById = async (req, res) => {
     }
 };
 
-module.exports = { createSpot, getSpotById };
+module.exports = { createSpot, getSpotById, getSpotByMatchId };

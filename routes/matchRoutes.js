@@ -14,6 +14,7 @@ router.post('/spots', createSpot);
 
 // Route for getting spot by matchId (GET)
 router.get('/spot/:id', getSpotById);
+
 router.get('/spot/matchid/:matchId', getSpotByMatchId);
 
 // POST request to create a new match

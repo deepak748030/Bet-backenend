@@ -1,6 +1,26 @@
 const mongoose = require('mongoose');
 
-// Define the team schema (reusable for teamA and teamB)
+// Define the player schema for selected players
+const playerSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    playerId: {
+        type: Number,
+        required: true
+    },
+    playerImg: {
+        type: String,  // URL for player image
+        required: true
+    },
+    playerShortName: {
+        type: String,  // Short name for player
+        required: true
+    }
+});
+
+// Define the team schema (reusable for teamA, teamB, and selectedTeam)
 const teamSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -25,7 +45,7 @@ const cricketMatchSchema = new mongoose.Schema({
     matchId: {
         type: Number,
         required: true,
-        unique: true // Assuming each match has a unique matchId
+        unique: true
     },
     series: {
         type: String,
@@ -33,7 +53,7 @@ const cricketMatchSchema = new mongoose.Schema({
     },
     matchType: {
         type: String,
-        enum: ['T20', 'ODI', 'Test'], // Limiting match types to valid cricket formats
+        enum: ['T20', 'ODI', 'Test'],
         required: true
     },
     matchDate: {
@@ -49,11 +69,11 @@ const cricketMatchSchema = new mongoose.Schema({
         required: true
     },
     teamA: {
-        type: teamSchema, // Embedded subdocument for teamA
+        type: teamSchema,
         required: true
     },
     teamB: {
-        type: teamSchema, // Embedded subdocument for teamB
+        type: teamSchema,
         required: true
     },
     seriesType: {
@@ -65,22 +85,37 @@ const cricketMatchSchema = new mongoose.Schema({
         required: true
     },
     contestId: {
-        type: mongoose.Schema.Types.ObjectId, // Reference to Spot model
-        ref: 'Spot', // Updated to reference Spot
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Spot',
         required: true
     },
     userId: {
-        type: mongoose.Schema.Types.ObjectId, // Reference to User model
-        ref: 'User', // Reference to User model
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
+    // New fields
+    result: {
+        type: String,
+        enum: ['win', 'loose', 'pending'], // Enum for result
+        default: 'pending' // Default result is pending
+    },
+    selectedTeam: {
+        type: teamSchema, // The user's selected team
+        required: true
+    },
+    selectedPlayers: [playerSchema], // Array of players
+    isBetAccepted: {
+        type: Boolean,
+        default: false // Default value for bet acceptance
+    },
     isMatchFinished: {
-        type: Boolean, // New boolean field to track if the match is finished
-        default: false // Default value is false
+        type: Boolean,
+        default: false // Default value for match completion
     }
 }, { timestamps: true });
 
 // Create the CricketMatch model
-const CricketMatch = mongoose.model('CricketMatch', cricketMatchSchema);  // Updated model name
+const CricketMatch = mongoose.model('CricketMatch', cricketMatchSchema);
 
-module.exports = CricketMatch;  // Export the updated model
+module.exports = CricketMatch;

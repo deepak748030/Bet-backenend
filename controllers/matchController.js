@@ -108,8 +108,9 @@ const getUpcomingMatches = async (req, res) => {
 };
 
 
-// Create a new match
-const createCricketMatch = async (req, res) => {  // Updated function name
+
+// Create a new cricket match
+const createCricketMatch = async (req, res) => {
     try {
         const {
             matchId,
@@ -124,12 +125,15 @@ const createCricketMatch = async (req, res) => {  // Updated function name
             dateWise,
             contestId,
             userId,
-            isMatchFinished // Optional: Default is false, but you can pass it if needed
+            isMatchFinished, // Optional
+            selectedTeam, // Ensure this is correctly passed
+            selectedPlayers, // Ensure selected players are passed
+            isBetAccepted // Optional, default is false
         } = req.body;
 
         // Validate required fields
-        if (!matchId || !series || !matchType || !matchDate || !matchTime || !venue || !teamA || !teamB || !seriesType || !dateWise || !contestId || !userId) {
-            return res.status(400).json({ msg: 'All fields are required.' });
+        if (!matchId || !series || !matchType || !matchDate || !matchTime || !venue || !teamA || !teamB || !seriesType || !dateWise || !contestId || !userId || !selectedTeam) {
+            return res.status(400).json({ msg: 'All fields are required, including selected team.' });
         }
 
         // Create a new match instance
@@ -146,7 +150,10 @@ const createCricketMatch = async (req, res) => {  // Updated function name
             dateWise,
             contestId,
             userId,
-            isMatchFinished: isMatchFinished || false // Set default value as false
+            isMatchFinished: isMatchFinished || false, // Set default value as false
+            selectedTeam, // Include the selectedTeam field in the match creation
+            selectedPlayers, // Include selectedPlayers field
+            isBetAccepted: isBetAccepted || false // Set default value as false
         });
 
         // Save the match to the database
@@ -168,6 +175,7 @@ const createCricketMatch = async (req, res) => {  // Updated function name
     }
 };
 
+
 // Get matches by User ID and where isMatchFinished is true
 const getCricketMatchByUserId = async (req, res) => {
     const { userId } = req.params;
@@ -178,7 +186,7 @@ const getCricketMatchByUserId = async (req, res) => {
             userId,
             isMatchFinished: false // Only return matches that are finished
         })
-            .populate('contestId', '-__v')  // Populates data from Spot model, excluding __v field
+            .populate('contestId', '-__v')  // Populates data from Contest model, excluding __v field
             .populate('userId', '-password -__v');  // Populates data from User model, excluding password and __v
 
         // If no matches are found, return a 404 error
@@ -214,5 +222,6 @@ const getCricketMatchByUserId = async (req, res) => {
         });
     }
 };
+
 
 module.exports = { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId };

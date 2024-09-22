@@ -1,6 +1,7 @@
 const axios = require('axios');
 const NodeCache = require('node-cache');
 const Match = require('../models/matchModels');
+const CricketMatch = require('../models/cricketMatchModel');  // Update the model name here
 
 // Initialize cache with a 10-minute TTL
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
@@ -106,4 +107,112 @@ const getUpcomingMatches = async (req, res) => {
     }
 };
 
-module.exports = { getUpcomingMatches };
+
+
+// Create a new match
+const createCricketMatch = async (req, res) => {  // Updated function name
+    try {
+        const {
+            matchId,
+            series,
+            matchType,
+            matchDate,
+            matchTime,
+            venue,
+            teamA,
+            teamB,
+            seriesType,
+            dateWise,
+            contestId,
+            userId
+        } = req.body;
+
+        // Validate required fields
+        if (!matchId || !series || !matchType || !matchDate || !matchTime || !venue || !teamA || !teamB || !seriesType || !dateWise || !contestId || !userId) {
+            return res.status(400).json({ msg: 'All fields are required.' });
+        }
+
+        // Create a new match instance
+        const newCricketMatch = new CricketMatch({   // Updated to use new model name
+            matchId,
+            series,
+            matchType,
+            matchDate,
+            matchTime,
+            venue,
+            teamA,
+            teamB,
+            seriesType,
+            dateWise,
+            contestId,
+            userId
+        });
+
+        // Save the match to the database
+        await newCricketMatch.save();
+
+        // Respond with the created match
+        return res.status(201).json({
+            msg: 'Cricket match created successfully.',
+            status: true,
+            data: newCricketMatch
+        });
+    } catch (error) {
+        console.error('Error creating cricket match:', error.message);
+        return res.status(500).json({
+            msg: 'Error creating cricket match.',
+            status: false,
+            error: error.message
+        });
+    }
+};
+
+
+// Get match by ID
+const getCricketMatchById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Find the match by ID and populate contestId (Spot) and userId (User)
+        const cricketMatch = await CricketMatch.findById(id)
+            .populate('contestId')  // Populates data from Spot model
+            .populate('userId');    // Populates data from User model
+
+        // If no match is found, return a 404 error
+        if (!cricketMatch) {
+            return res.status(404).json({
+                msg: 'No cricket match found for the given ID.',
+                status: false,
+            });
+        }
+
+        // Respond with the found match, including populated contestId and userId data
+        return res.status(200).json({
+            msg: 'Cricket match found successfully.',
+            status: true,
+            data: cricketMatch,
+        });
+    } catch (error) {
+        console.error('Error fetching cricket match:', error.message);
+
+        // Handle invalid ObjectId format
+        if (error.kind === 'ObjectId') {
+            return res.status(400).json({
+                msg: 'Invalid match ID.',
+                status: false,
+            });
+        }
+
+        // Handle server error
+        return res.status(500).json({
+            msg: 'Error fetching cricket match.',
+            status: false,
+            error: error.message,
+        });
+    }
+};
+
+
+
+
+module.exports = { getUpcomingMatches, createCricketMatch, getCricketMatchById };

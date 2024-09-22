@@ -2,7 +2,6 @@ const Spot = require('../models/spotModels');
 
 // Create a new spot
 const createSpot = async (req, res) => {
-    // Destructure properties from request body
     const { totalSpot, matchId, contestId, commission, amount } = req.body;
 
     // Validate input data
@@ -42,8 +41,15 @@ const createSpot = async (req, res) => {
     }
 
     try {
-        // Create a new spot instance
-        const newSpot = new Spot({ totalSpot, matchId, contestId, commission, amount });
+        // Create a new spot instance with availableSpots equal to totalSpot
+        const newSpot = new Spot({
+            totalSpot,
+            availableSpots: totalSpot, // Initialize availableSpots to be the same as totalSpot
+            matchId,
+            contestId,
+            commission,
+            amount
+        });
 
         // Save the new spot to the database
         await newSpot.save();
@@ -93,7 +99,5 @@ const getSpotByMatchId = async (req, res) => {
         return res.status(500).json({ error: 'Error fetching spots' });
     }
 };
-
-
 
 module.exports = { createSpot, getSpotByMatchId };

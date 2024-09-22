@@ -5,6 +5,10 @@ const spotSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    availableSpots: {
+        type: Number,
+        required: true, // Ensure available spots is required and tracked
+    },
     matchId: {
         type: String,
         required: true,
@@ -18,7 +22,7 @@ const spotSchema = new mongoose.Schema({
         required: true,
     },
     amount: {
-        type: Number,   // Add this field for amount
+        type: Number,   // Field for amount
         required: true,
     },
 }, { timestamps: true });

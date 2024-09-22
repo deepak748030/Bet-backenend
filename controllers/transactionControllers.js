@@ -108,5 +108,41 @@ const refundTransaction = async (req, res) => {
   }
 };
 
+
+// Get bets by User ID
+const getBetByUserId = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Fetch all bets for the user
+    const bets = await Transaction.find({ userId, type: 'bet' });
+
+    // Count total bets
+    const totalBets = bets.length;
+
+    // Respond with total bets count and all bets data
+    return res.status(200).json({
+      msg: 'Bets retrieved successfully.',
+      totalBets,
+      bets, // Include all bets data
+    });
+  } catch (error) {
+    console.error('Error fetching bets:', error.message);
+
+    // Handle invalid ObjectId format
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({
+        msg: 'Invalid user ID.',
+      });
+    }
+
+    // Handle server error
+    return res.status(500).json({
+      msg: 'Error fetching bets.',
+      error: error.message,
+    });
+  }
+};
+
 // Export the controller functions
-module.exports = { transactionAdd, withdrawTransaction, betTransaction, refundTransaction };
+module.exports = { transactionAdd, withdrawTransaction, betTransaction, refundTransaction, getBetByUserId };

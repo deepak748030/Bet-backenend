@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { transactionAdd, withdrawTransaction, betTransaction, refundTransaction } = require('../controllers/transactionControllers');
+const { transactionAdd, withdrawTransaction, betTransaction, refundTransaction, getBetByUserId } = require('../controllers/transactionControllers');
 
 // Add a new transaction
 router.post('/add', transactionAdd);
@@ -13,5 +13,7 @@ router.post('/bet', betTransaction);
 
 // Issue a Refund
 router.post('/refund', refundTransaction);
+
+router.get('/bet/:userId', getBetByUserId)
 
 module.exports = router;

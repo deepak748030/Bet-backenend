@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');  // Import the CORS middleware
 const connectDB = require('./config/db'); // Database connection
+const morgan = require('morgan');
 
 dotenv.config(); // Load environment variables
 
@@ -17,6 +18,7 @@ app.use(cors({
 
 // Middleware to parse incoming requests
 app.use(express.json());
+app.use(morgan('dev'))
 
 // Home route
 app.get('/', (req, res) => {

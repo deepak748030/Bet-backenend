@@ -6,7 +6,7 @@ const { registerUser, loginUser, getUserById } = require('../controllers/userCon
 router.post('/login', loginUser);
 
 // Update transaction status
-router.put('/signup', registerUser);
+router.post('/signup', registerUser);
 
 // Place a Bet
 router.post('/get/:id', getUserById);

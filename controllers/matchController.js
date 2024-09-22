@@ -176,7 +176,7 @@ const getCricketMatchByUserId = async (req, res) => {
         // Find matches by userId and where isMatchFinished is true
         const cricketMatches = await CricketMatch.find({
             userId,
-            isMatchFinished: true // Only return matches that are finished
+            isMatchFinished: false // Only return matches that are finished
         })
             .populate('contestId', '-__v')  // Populates data from Spot model, excluding __v field
             .populate('userId', '-password -__v');  // Populates data from User model, excluding password and __v

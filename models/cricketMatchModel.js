@@ -73,6 +73,10 @@ const cricketMatchSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, // Reference to User model
         ref: 'User', // Reference to User model
         required: true
+    },
+    isMatchFinished: {
+        type: Boolean, // New boolean field to track if the match is finished
+        default: false // Default value is false
     }
 }, { timestamps: true });
 

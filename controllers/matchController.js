@@ -108,7 +108,6 @@ const getUpcomingMatches = async (req, res) => {
 };
 
 
-
 // Create a new match
 const createCricketMatch = async (req, res) => {  // Updated function name
     try {
@@ -124,7 +123,8 @@ const createCricketMatch = async (req, res) => {  // Updated function name
             seriesType,
             dateWise,
             contestId,
-            userId
+            userId,
+            isMatchFinished // Optional: Default is false, but you can pass it if needed
         } = req.body;
 
         // Validate required fields
@@ -133,7 +133,7 @@ const createCricketMatch = async (req, res) => {  // Updated function name
         }
 
         // Create a new match instance
-        const newCricketMatch = new CricketMatch({   // Updated to use new model name
+        const newCricketMatch = new CricketMatch({
             matchId,
             series,
             matchType,
@@ -145,7 +145,8 @@ const createCricketMatch = async (req, res) => {  // Updated function name
             seriesType,
             dateWise,
             contestId,
-            userId
+            userId,
+            isMatchFinished: isMatchFinished || false // Set default value as false
         });
 
         // Save the match to the database
@@ -167,52 +168,51 @@ const createCricketMatch = async (req, res) => {  // Updated function name
     }
 };
 
-
-// Get match by ID
-const getCricketMatchById = async (req, res) => {
-    const { id } = req.params;
+// Get matches by User ID and where isMatchFinished is true
+const getCricketMatchByUserId = async (req, res) => {
+    const { userId } = req.params;
 
     try {
-        // Find the match by ID and populate contestId (Spot) and userId (User)
-        const cricketMatch = await CricketMatch.findById(id)
-            .populate('contestId')  // Populates data from Spot model
-            .populate('userId');    // Populates data from User model
+        // Find matches by userId and where isMatchFinished is true
+        const cricketMatches = await CricketMatch.find({
+            userId,
+            isMatchFinished: true // Only return matches that are finished
+        })
+            .populate('contestId', '-__v')  // Populates data from Spot model, excluding __v field
+            .populate('userId', '-password -__v');  // Populates data from User model, excluding password and __v
 
-        // If no match is found, return a 404 error
-        if (!cricketMatch) {
+        // If no matches are found, return a 404 error
+        if (!cricketMatches || cricketMatches.length === 0) {
             return res.status(404).json({
-                msg: 'No cricket match found for the given ID.',
+                msg: 'No finished cricket matches found for the given user ID.',
                 status: false,
             });
         }
 
-        // Respond with the found match, including populated contestId and userId data
+        // Respond with the found matches, including populated contestId and userId data
         return res.status(200).json({
-            msg: 'Cricket match found successfully.',
+            msg: 'Finished cricket matches found successfully.',
             status: true,
-            data: cricketMatch,
+            data: cricketMatches,
         });
     } catch (error) {
-        console.error('Error fetching cricket match:', error.message);
+        console.error('Error fetching cricket matches:', error.message);
 
         // Handle invalid ObjectId format
         if (error.kind === 'ObjectId') {
             return res.status(400).json({
-                msg: 'Invalid match ID.',
+                msg: 'Invalid user ID.',
                 status: false,
             });
         }
 
         // Handle server error
         return res.status(500).json({
-            msg: 'Error fetching cricket match.',
+            msg: 'Error fetching cricket matches.',
             status: false,
             error: error.message,
         });
     }
 };
 
-
-
-
-module.exports = { getUpcomingMatches, createCricketMatch, getCricketMatchById };
+module.exports = { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId };

@@ -2,7 +2,7 @@ const Spot = require('../models/spotModels');
 
 // Create a new spot
 const createSpot = async (req, res) => {
-    const { totalSpot, matchId, contestId, commission, amount } = req.body;
+    const { totalSpot, matchId, commission, amount } = req.body;
 
     // Validate input data
     if (!totalSpot || typeof totalSpot !== 'number' || totalSpot <= 0) {
@@ -15,13 +15,6 @@ const createSpot = async (req, res) => {
     if (!matchId || typeof matchId !== 'string' || matchId.trim() === '') {
         return res.status(400).json({
             msg: 'Match ID is required and must be a valid non-empty string.',
-            status: false,
-        });
-    }
-
-    if (!contestId || typeof contestId !== 'string' || contestId.trim() === '') {
-        return res.status(400).json({
-            msg: 'Contest ID is required and must be a valid non-empty string.',
             status: false,
         });
     }
@@ -41,14 +34,13 @@ const createSpot = async (req, res) => {
     }
 
     try {
-        // Create a new spot instance with availableSpots equal to totalSpot
+        // Set availableSpots initially to the totalSpot value
         const newSpot = new Spot({
             totalSpot,
-            availableSpots: totalSpot, // Initialize availableSpots to be the same as totalSpot
+            availableSpots: totalSpot, // Initially, available spots equal total spots
             matchId,
-            contestId,
             commission,
-            amount
+            amount,
         });
 
         // Save the new spot to the database
@@ -61,7 +53,6 @@ const createSpot = async (req, res) => {
             data: newSpot,
         });
     } catch (error) {
-        // Log the error and respond with a 500 status
         console.error('Error creating spot:', error.message);
         return res.status(500).json({
             msg: 'Error creating spot. Please try again later.',
@@ -71,33 +62,46 @@ const createSpot = async (req, res) => {
     }
 };
 
-// Get spot by matchId
-const getSpotByMatchId = async (req, res) => {
-    const { matchId } = req.params;
+// Get spot by ID
+const getSpotById = async (req, res) => {
+    const { id } = req.params;  // Assuming the ID is passed as a parameter in the request URL
 
     try {
-        // Find spots based on the provided matchId
-        const spots = await Spot.find({ matchId });
+        // Find the spot based on the provided ID
+        const spot = await Spot.findById(id);
 
-        // If no spots found, return a 404 error
-        if (!spots || spots.length === 0) {
+        // If no spot found, return a 404 error
+        if (!spot) {
             return res.status(404).json({
-                msg: 'No spots found for the given match ID.',
+                msg: 'No spot found for the given ID.',
                 status: false,
             });
         }
 
-        // Respond with the found spots
+        // Respond with the found spot
         return res.status(200).json({
-            msg: 'Spots found successfully.',
+            msg: 'Spot found successfully.',
             status: true,
-            data: spots,
+            data: spot,
         });
     } catch (error) {
-        // Log and return server error
-        console.error('Error fetching spots:', error.message);
-        return res.status(500).json({ error: 'Error fetching spots' });
+        console.error('Error fetching spot:', error.message);
+
+        // Handle invalid ObjectId format
+        if (error.kind === 'ObjectId') {
+            return res.status(400).json({
+                msg: 'Invalid spot ID.',
+                status: false,
+            });
+        }
+
+        // Handle server error
+        return res.status(500).json({
+            msg: 'Error fetching spot.',
+            status: false,
+            error: error.message,
+        });
     }
 };
 
-module.exports = { createSpot, getSpotByMatchId };
+module.exports = { createSpot, getSpotById };

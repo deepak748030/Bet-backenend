@@ -13,16 +13,12 @@ const spotSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    contestId: {
-        type: String,
-        required: true,
-    },
     commission: {
         type: Number,
         required: true,
     },
     amount: {
-        type: Number,   // Field for amount
+        type: Number,
         required: true,
     },
 }, { timestamps: true });

@@ -16,14 +16,14 @@ const transactionSchema = new mongoose.Schema({
     enum: ['withdraw', 'bet', 'add', 'refund', 'deposit'], // Enum for different transaction types
     required: true, // Type is required
   },
-  status: {
-    type: String,
-    enum: ['success', 'failure', 'pending'], // Enum for status
-    default: 'pending', // Default status is pending
-  },
   message: {
     type: String,
     default: null, // Optional field for additional information
+  },
+  result: {
+    type: String,
+    enum: ['win', 'lost', 'pending'], // Enum for result
+    default: 'pending', // Default result status
   },
   createdAt: {
     type: Date,

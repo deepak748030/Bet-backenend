@@ -144,5 +144,30 @@ const getBetByUserId = async (req, res) => {
   }
 };
 
+
+
+// Controller function to handle getting recent transactions by userId and count
+const getRecentTrxByUserId = async (req, res) => {
+  const { userId, count } = req.params;
+
+  try {
+    // Fetch recent transactions for the user, sorted by latest, limited by the count
+    const transactions = await Transaction.find({ userId })
+      .sort({ createdAt: -1 })  // Assuming 'createdAt' is the field storing the timestamp of the transaction
+      .limit(Number(count));
+
+    // If no transactions found, return a 404
+    if (!transactions.length) {
+      return res.status(404).json({ message: 'No transactions found for this user.' });
+    }
+
+    // Send the transactions back in the response
+    res.json(transactions);
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Export the controller functions
-module.exports = { transactionAdd, withdrawTransaction, betTransaction, refundTransaction, getBetByUserId };
+module.exports = { transactionAdd, withdrawTransaction, betTransaction, refundTransaction, getBetByUserId,getRecentTrxByUserId };

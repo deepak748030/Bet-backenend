@@ -1,4 +1,5 @@
 const Transaction = require('../models/transcationModels');
+const User = require('../models/userModels');
 
 // Add a new deposit transaction
 const transactionAdd = async (req, res) => {
@@ -10,16 +11,27 @@ const transactionAdd = async (req, res) => {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
 
+    // Find the user and update their wallet
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update the user's wallet
+    user.wallet += amount;
+    await user.save();
+
+    // Create the deposit transaction
     const newTransaction = new Transaction({
       userId,
       amount,
-      type: 'deposit', // Default to a deposit transaction type
+      type: 'deposit',
       message,
     });
 
     // Save the transaction
     await newTransaction.save();
-    res.status(201).json({ message: 'Deposit transaction created successfully', transaction: newTransaction });
+    res.status(201).json({ message: 'Deposit transaction created successfully', transaction: newTransaction, wallet: user.wallet });
   } catch (error) {
     console.error('Error creating deposit transaction:', error.message);
     res.status(500).json({ error: 'Failed to create deposit transaction', details: error.message });
@@ -36,16 +48,31 @@ const withdrawTransaction = async (req, res) => {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
 
+    // Find the user and check their wallet balance
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.wallet < amount) {
+      return res.status(400).json({ error: 'Insufficient funds' });
+    }
+
+    // Deduct from the user's wallet
+    user.wallet -= amount;
+    await user.save();
+
+    // Create the withdrawal transaction
     const newWithdraw = new Transaction({
       userId,
       amount,
-      type: 'withdraw', // Set transaction type to withdraw
+      type: 'withdraw',
       message,
     });
 
     // Save the transaction
     await newWithdraw.save();
-    res.status(201).json({ message: 'Withdrawal transaction created successfully', transaction: newWithdraw });
+    res.status(201).json({ message: 'Withdrawal transaction created successfully', transaction: newWithdraw, wallet: user.wallet });
   } catch (error) {
     console.error('Error creating withdraw transaction:', error.message);
     res.status(500).json({ error: 'Failed to create withdraw transaction', details: error.message });
@@ -62,16 +89,32 @@ const betTransaction = async (req, res) => {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
 
+    // Find the user and check their wallet balance
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.wallet < amount) {
+      return res.status(400).json({ error: 'Low balance' });
+    }
+
+    // Deduct from the user's wallet
+    user.wallet -= amount;
+    await user.save();
+
+    // Create the bet transaction
     const newBet = new Transaction({
       userId,
       amount,
-      type: 'bet', // Set transaction type to bet
+      type: 'bet',
       message,
+      result: 'pending', // Result can be updated later (win/lost)
     });
 
     // Save the transaction
     await newBet.save();
-    res.status(201).json({ message: 'Bet transaction created successfully', transaction: newBet });
+    res.status(201).json({ message: 'Bet transaction created successfully', transaction: newBet, wallet: user.wallet });
   } catch (error) {
     console.error('Error creating bet transaction:', error.message);
     res.status(500).json({ error: 'Failed to create bet transaction', details: error.message });
@@ -88,16 +131,27 @@ const refundTransaction = async (req, res) => {
       return res.status(400).json({ error: 'User ID and refund amount are required' });
     }
 
+    // Find the user and update their wallet
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Add refund amount to the wallet
+    user.wallet += refundAmount;
+    await user.save();
+
+    // Create the refund transaction
     const refundTrans = new Transaction({
       userId,
       amount: refundAmount,
-      type: 'refund', // Set transaction type to refund
+      type: 'refund',
       message,
     });
 
     // Save the transaction
     await refundTrans.save();
-    res.status(201).json({ message: 'Refund transaction issued successfully', transaction: refundTrans });
+    res.status(201).json({ message: 'Refund transaction issued successfully', transaction: refundTrans, wallet: user.wallet });
   } catch (error) {
     console.error('Error creating refund transaction:', error.message);
     res.status(500).json({ error: 'Failed to issue refund transaction', details: error.message });
@@ -129,22 +183,12 @@ const getBetByUserId = async (req, res) => {
   } catch (error) {
     console.error('Error fetching bets summary:', error.message);
 
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({
-        msg: 'Invalid user ID.',
-      });
-    }
-
-    // Handle server error
     return res.status(500).json({
       msg: 'Error fetching bets summary.',
       error: error.message,
     });
   }
 };
-
-
 
 // Controller function to handle getting recent transactions by userId and count
 const getRecentTrxByUserId = async (req, res) => {
@@ -168,6 +212,12 @@ const getRecentTrxByUserId = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 // Export the controller functions
-module.exports = { transactionAdd, withdrawTransaction, betTransaction, refundTransaction, getBetByUserId,getRecentTrxByUserId };
+module.exports = {
+  transactionAdd,
+  withdrawTransaction,
+  betTransaction,
+  refundTransaction,
+  getBetByUserId,
+  getRecentTrxByUserId
+};

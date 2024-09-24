@@ -109,71 +109,7 @@ const getUpcomingMatches = async (req, res) => {
 
 
 
-// Create a new cricket match
-const createCricketMatch = async (req, res) => {
-    try {
-        const {
-            matchId,
-            series,
-            matchType,
-            matchDate,
-            matchTime,
-            venue,
-            teamA,
-            teamB,
-            seriesType,
-            dateWise,
-            contestId,
-            userId,
-            isMatchFinished, // Optional
-            selectedTeam, // Ensure this is correctly passed
-            selectedPlayers, // Ensure selected players are passed
-            isBetAccepted // Optional, default is false
-        } = req.body;
 
-        // Validate required fields
-        if (!matchId || !series || !matchType || !matchDate || !matchTime || !venue || !teamA || !teamB || !seriesType || !dateWise || !contestId || !userId || !selectedTeam) {
-            return res.status(400).json({ msg: 'All fields are required, including selected team.' });
-        }
-
-        // Create a new match instance
-        const newCricketMatch = new CricketMatch({
-            matchId,
-            series,
-            matchType,
-            matchDate,
-            matchTime,
-            venue,
-            teamA,
-            teamB,
-            seriesType,
-            dateWise,
-            contestId,
-            userId,
-            isMatchFinished: isMatchFinished || false, // Set default value as false
-            selectedTeam, // Include the selectedTeam field in the match creation
-            selectedPlayers, // Include selectedPlayers field
-            isBetAccepted: isBetAccepted || false // Set default value as false
-        });
-
-        // Save the match to the database
-        await newCricketMatch.save();
-
-        // Respond with the created match
-        return res.status(201).json({
-            msg: 'Cricket match created successfully.',
-            status: true,
-            data: newCricketMatch
-        });
-    } catch (error) {
-        console.error('Error creating cricket match:', error.message);
-        return res.status(500).json({
-            msg: 'Error creating cricket match.',
-            status: false,
-            error: error.message
-        });
-    }
-};
 
 
 // Get matches by User ID and where isMatchFinished is true
@@ -222,6 +158,113 @@ const getCricketMatchByUserId = async (req, res) => {
         });
     }
 };
+
+
+
+// Create a new cricket match
+const createCricketMatch = async (req, res) => {
+    try {
+        const {
+            matchId,
+            series,
+            matchType,
+            matchDate,
+            matchTime,
+            venue,
+            teamA,
+            teamB,
+            seriesType,
+            dateWise,
+            contestId,
+            userId,
+            isMatchFinished, // Optional
+            selectedTeam, // Ensure this is correctly passed
+            selectedPlayers // Ensure selected players are passed
+        } = req.body;
+
+        // Validate required fields
+        if (!matchId || !series || !matchType || !matchDate || !matchTime || !venue || !teamA || !teamB || !seriesType || !dateWise || !contestId || !userId || !selectedTeam) {
+            return res.status(400).json({ msg: 'All fields are required, including selected team.' });
+        }
+
+        // Check if there are bets already placed for the same contest
+        const existingBets = await CricketMatch.find({ contestId }).sort({ createdAt: 1 }); // Sort by creation time
+
+        // Initialize isBetAccepted based on existing bets
+        let isBetAccepted = existingBets.length === 0;
+
+        // If there are existing bets, process them
+        if (existingBets.length > 0) {
+            const teamACount = existingBets.filter(bet => bet.selectedTeam.id === teamA.id).length;
+            const teamBCount = existingBets.filter(bet => bet.selectedTeam.id === teamB.id).length;
+
+            // If both teams have bets, accept bets on both sides
+            if (teamACount > 0 && teamBCount > 0) {
+                isBetAccepted = true;
+
+                // Update existing bets to accept them
+                await CricketMatch.updateMany(
+                    { contestId, selectedTeam: { $in: [teamA.id, teamB.id] } },
+                    { $set: { isBetAccepted: true } }
+                );
+            } else if (teamACount > 0) {
+                // If only Team A has bets, accept bets for Team A
+                isBetAccepted = true;
+
+                await CricketMatch.updateMany(
+                    { contestId, selectedTeam: { id: teamA.id } },
+                    { $set: { isBetAccepted: true } }
+                );
+            } else if (teamBCount > 0) {
+                // If only Team B has bets, accept bets for Team B
+                isBetAccepted = true;
+
+                await CricketMatch.updateMany(
+                    { contestId, selectedTeam: { id: teamB.id } },
+                    { $set: { isBetAccepted: true } }
+                );
+            }
+        }
+
+        // Create a new match instance
+        const newCricketMatch = new CricketMatch({
+            matchId,
+            series,
+            matchType,
+            matchDate,
+            matchTime,
+            venue,
+            teamA,
+            teamB,
+            seriesType,
+            dateWise,
+            contestId,
+            userId,
+            isMatchFinished: isMatchFinished || false, // Set default value as false
+            selectedTeam, // Include the selectedTeam field in the match creation
+            selectedPlayers, // Include selectedPlayers field
+            isBetAccepted // Set based on existing bets
+        });
+
+        // Save the match to the database
+        await newCricketMatch.save();
+
+        // Respond with the created match
+        return res.status(201).json({
+            msg: 'Cricket match created successfully.',
+            status: true,
+            data: newCricketMatch
+        });
+    } catch (error) {
+        console.error('Error creating cricket match:', error.message);
+        return res.status(500).json({
+            msg: 'Error creating cricket match.',
+            status: false,
+            error: error.message
+        });
+    }
+};
+
 
 
 module.exports = { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId };

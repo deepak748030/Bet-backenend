@@ -35,6 +35,7 @@ const fetchMatchData = async () => {
     }
 };
 
+
 // API Controller to fetch matches, save to database, and send to user
 const getUpcomingMatches = async (req, res) => {
     try {
@@ -106,6 +107,7 @@ const getUpcomingMatches = async (req, res) => {
         });
     }
 };
+
 
 
 

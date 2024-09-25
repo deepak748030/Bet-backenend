@@ -31,10 +31,18 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null, // Optional, will be updated based on user activity
     },
-    walletBalance: {
+    winningWallet: {
         type: Number,
-        default: 0,  // Wallet balance starts at 0 by default
-    }
+        default: 0,  // Winning wallet balance starts at 0 by default
+    },
+    depositWallet: {
+        type: Number,
+        default: 0,  // Deposit wallet balance starts at 0 by default
+    },
+    bonusWallet: {
+        type: Number,
+        default: 0,  // Bonus wallet balance starts at 0 by default
+    },
 });
 
 const User = mongoose.model('User', userSchema);

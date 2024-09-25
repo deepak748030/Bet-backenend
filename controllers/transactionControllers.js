@@ -11,14 +11,14 @@ const transactionAdd = async (req, res) => {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
 
-    // Find the user and update their wallet
+    // Find the user and update their deposit wallet
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Update the user's wallet
-    user.wallet += amount;
+    // Update the user's deposit wallet
+    user.depositWallet += amount;
     await user.save();
 
     // Create the deposit transaction
@@ -31,7 +31,7 @@ const transactionAdd = async (req, res) => {
 
     // Save the transaction
     await newTransaction.save();
-    res.status(201).json({ message: 'Deposit transaction created successfully', transaction: newTransaction, wallet: user.wallet });
+    res.status(201).json({ message: 'Deposit transaction created successfully', transaction: newTransaction, wallet: user.depositWallet });
   } catch (error) {
     console.error('Error creating deposit transaction:', error.message);
     res.status(500).json({ error: 'Failed to create deposit transaction', details: error.message });
@@ -48,18 +48,18 @@ const withdrawTransaction = async (req, res) => {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
 
-    // Find the user and check their wallet balance
+    // Find the user and check their deposit wallet balance
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (user.wallet < amount) {
+    if (user.depositWallet < amount) {
       return res.status(400).json({ error: 'Insufficient funds' });
     }
 
-    // Deduct from the user's wallet
-    user.wallet -= amount;
+    // Deduct from the user's deposit wallet
+    user.depositWallet -= amount;
     await user.save();
 
     // Create the withdrawal transaction
@@ -72,7 +72,7 @@ const withdrawTransaction = async (req, res) => {
 
     // Save the transaction
     await newWithdraw.save();
-    res.status(201).json({ message: 'Withdrawal transaction created successfully', transaction: newWithdraw, wallet: user.wallet });
+    res.status(201).json({ message: 'Withdrawal transaction created successfully', transaction: newWithdraw, wallet: user.depositWallet });
   } catch (error) {
     console.error('Error creating withdraw transaction:', error.message);
     res.status(500).json({ error: 'Failed to create withdraw transaction', details: error.message });
@@ -89,18 +89,18 @@ const betTransaction = async (req, res) => {
       return res.status(400).json({ error: 'User ID and amount are required' });
     }
 
-    // Find the user and check their wallet balance
+    // Find the user and check their deposit wallet balance
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (user.wallet < amount) {
+    if (user.depositWallet < amount) {
       return res.status(400).json({ error: 'Low balance' });
     }
 
-    // Deduct from the user's wallet
-    user.wallet -= amount;
+    // Deduct from the user's deposit wallet
+    user.depositWallet -= amount;
     await user.save();
 
     // Create the bet transaction
@@ -114,7 +114,7 @@ const betTransaction = async (req, res) => {
 
     // Save the transaction
     await newBet.save();
-    res.status(201).json({ message: 'Bet transaction created successfully', transaction: newBet, wallet: user.wallet });
+    res.status(201).json({ message: 'Bet transaction created successfully', transaction: newBet, wallet: user.depositWallet });
   } catch (error) {
     console.error('Error creating bet transaction:', error.message);
     res.status(500).json({ error: 'Failed to create bet transaction', details: error.message });
@@ -131,14 +131,14 @@ const refundTransaction = async (req, res) => {
       return res.status(400).json({ error: 'User ID and refund amount are required' });
     }
 
-    // Find the user and update their wallet
+    // Find the user and update their winning wallet
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Add refund amount to the wallet
-    user.wallet += refundAmount;
+    // Add refund amount to the winning wallet
+    user.winningWallet += refundAmount;
     await user.save();
 
     // Create the refund transaction
@@ -151,7 +151,7 @@ const refundTransaction = async (req, res) => {
 
     // Save the transaction
     await refundTrans.save();
-    res.status(201).json({ message: 'Refund transaction issued successfully', transaction: refundTrans, wallet: user.wallet });
+    res.status(201).json({ message: 'Refund transaction issued successfully', transaction: refundTrans, wallet: user.winningWallet });
   } catch (error) {
     console.error('Error creating refund transaction:', error.message);
     res.status(500).json({ error: 'Failed to issue refund transaction', details: error.message });
@@ -212,6 +212,7 @@ const getRecentTrxByUserId = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 // Export the controller functions
 module.exports = {
   transactionAdd,

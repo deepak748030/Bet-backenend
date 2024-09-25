@@ -30,6 +30,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/transaction', require('./routes/transactionRoutes'));
 app.use('/api/match', require('./routes/matchRoutes'));
 app.use('/api', require('./routes/liveMatchRoutes'));
+app.use('/api/banner', require('./routes/bannerRoutes'));
 
 // Start the server
 const PORT = process.env.PORT || 3001;

@@ -52,7 +52,6 @@ const cricketMatchSchema = new mongoose.Schema({
     },
     matchType: {
         type: String,
-        enum: ['T20', 'ODI', 'Test'],
         required: true
     },
     matchDate: {

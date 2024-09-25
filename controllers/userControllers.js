@@ -106,7 +106,9 @@ const getUserById = async (req, res) => {
                 isBlocked: user.isBlocked,
                 registerDate: user.registerDate,
                 lastActiveDate: user.lastActiveDate,
-                walletBalance: user.walletBalance,
+                winningWallet: newUser.winningWallet,
+                depositWallet: newUser.depositWallet,
+                bonusWallet: newUser.bonusWallet,
             },
         });
     } catch (error) {

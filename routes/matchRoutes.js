@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId } = require('../controllers/matchController');
+const { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId, searchMatches } = require('../controllers/matchController');
 const { getSquad } = require('../controllers/squadController');
 const { createSpot, getSpotById, getSpotByMatchId } = require('../controllers/spotController');
 
@@ -22,5 +22,8 @@ router.post('/matches', createCricketMatch);
 
 // POST request to create a new match
 router.get('/matches/:userId', getCricketMatchByUserId);
+
+// Define the search route
+router.get('/searchMatches', searchMatches);
 
 module.exports = router;

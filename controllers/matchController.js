@@ -269,4 +269,56 @@ const createCricketMatch = async (req, res) => {
 
 
 
-module.exports = { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId };
+
+
+// Controller to search matches
+const searchMatches = async (req, res) => {
+    try {
+        const { query } = req.query; // Get search query from URL query params
+
+        if (!query) {
+            return res.status(400).json({
+                msg: 'Please provide a search query.',
+                status: false,
+            });
+        }
+
+        // Perform search in the database
+        const matches = await Match.find({
+            $or: [
+                { 'teamA.name': { $regex: query, $options: 'i' } },  // Search by team A name
+                { 'teamB.name': { $regex: query, $options: 'i' } },  // Search by team B name
+                { series: { $regex: query, $options: 'i' } },         // Search by series name
+                { venue: { $regex: query, $options: 'i' } },          // Search by venue
+                { matchType: { $regex: query, $options: 'i' } },      // Search by match type
+            ]
+        });
+
+        if (matches.length === 0) {
+            return res.status(404).json({
+                msg: 'No matches found for the given query.',
+                status: false,
+            });
+        }
+
+        // Return found matches
+        return res.status(200).json({
+            msg: 'Matches found.',
+            status: true,
+            data: matches,
+        });
+
+    } catch (error) {
+        console.error('Error searching matches:', error.message);
+        return res.status(500).json({
+            msg: 'Error searching matches.',
+            status: false,
+            error: error.message,
+        });
+    }
+};
+
+
+
+
+module.exports = { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId, searchMatches };

@@ -44,8 +44,7 @@ const teamSchema = new mongoose.Schema({
 const cricketMatchSchema = new mongoose.Schema({
     matchId: {
         type: Number,
-        required: true,
-        unique: true
+        required: true
     },
     series: {
         type: String,

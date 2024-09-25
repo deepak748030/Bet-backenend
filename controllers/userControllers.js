@@ -70,7 +70,9 @@ const loginUser = async (req, res) => {
                 mobile: user.mobile,
                 isBlocked: user.isBlocked,
                 registerDate: user.registerDate,
-                walletBalance: user.walletBalance,
+                winningWallet: newUser.winningWallet,
+                depositWallet: newUser.depositWallet,
+                bonusWallet: newUser.bonusWallet,
             },
             token, // JWT token
         });

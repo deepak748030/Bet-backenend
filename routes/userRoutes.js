@@ -9,7 +9,7 @@ router.post('/login', loginUser);
 router.post('/signup', registerUser);
 
 // Place a Bet
-router.post('/get/:id', getUserById);
+router.get('/get/:id', getUserById);
 
 
 module.exports = router;

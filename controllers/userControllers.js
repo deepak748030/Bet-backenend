@@ -44,6 +44,7 @@ const registerUser = async (req, res) => {
     }
 };
 
+
 // Login user with mobile number
 const loginUser = async (req, res) => {
     const { mobile } = req.body;
@@ -70,9 +71,9 @@ const loginUser = async (req, res) => {
                 mobile: user.mobile,
                 isBlocked: user.isBlocked,
                 registerDate: user.registerDate,
-                winningWallet: newUser.winningWallet,
-                depositWallet: newUser.depositWallet,
-                bonusWallet: newUser.bonusWallet,
+                winningWallet: user.winningWallet,
+                depositWallet: user.depositWallet,
+                bonusWallet: user.bonusWallet,
             },
             token, // JWT token
         });
@@ -80,6 +81,7 @@ const loginUser = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
+
 
 
 // Get user by userId
@@ -106,9 +108,9 @@ const getUserById = async (req, res) => {
                 isBlocked: user.isBlocked,
                 registerDate: user.registerDate,
                 lastActiveDate: user.lastActiveDate,
-                winningWallet: newUser.winningWallet,
-                depositWallet: newUser.depositWallet,
-                bonusWallet: newUser.bonusWallet,
+                winningWallet: user.winningWallet,
+                depositWallet: user.depositWallet,
+                bonusWallet: user.bonusWallet,
             },
         });
     } catch (error) {

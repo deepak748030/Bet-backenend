@@ -20,7 +20,7 @@ const getLiveMatchesAndScorecards = async (req, res) => {
         const liveMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/liveMatches');
         const liveMatches = liveMatchesResponse.data;
 
-        // Handle case where live matches are less than expected
+        // Handle case where no live matches are found
         if (!liveMatches || liveMatches.length === 0) {
             return res.status(404).json({ message: 'No live matches found' });
         }
@@ -35,7 +35,6 @@ const getLiveMatchesAndScorecards = async (req, res) => {
                 const scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
                 const scorecard = scorecardResponse.data?.scorecard || null;
 
-                // Save match details including status
                 const matchStatus = scorecard ? 'live' : 'endmatch';
 
                 // Update or insert into MongoDB
@@ -57,13 +56,13 @@ const getLiveMatchesAndScorecards = async (req, res) => {
                 };
             } catch (error) {
                 console.error(`Error fetching scorecard for match ID ${matchId}:`, error);
-                // Handle incomplete data (e.g., no scorecard but match is live)
+
+                // Handle case where scorecard data is missing but match is still live
                 return {
                     matchId,
                     matchName,
                     scorecard: null,
-                    status: 'endmatch',
-                    error: 'Failed to fetch scorecard'
+                    status: 'live'  // Mark the match as live, even if scorecard is missing
                 };
             }
         });
@@ -79,6 +78,27 @@ const getLiveMatchesAndScorecards = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching live matches:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Function to get scorecard by matchId from the database (instead of the cache)
+const getMatchScorecardById = async (req, res) => {
+    const { matchId } = req.params; // Get matchId from the request parameters
+    try {
+        // Query the database for the scorecard by matchId
+        const scorecardEntry = await ScoreCard.findOne({ matchId });
+
+        if (scorecardEntry) {
+            console.log(`Returning scorecard from database for match ID ${matchId}`);
+            return res.status(200).json(scorecardEntry);
+        }
+
+        // If match not found in the database
+        return res.status(404).json({ message: 'Match not found in database' });
+
+    } catch (error) {
+        console.error('Error fetching match scorecard from database:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -117,7 +137,7 @@ setInterval(async () => {
                 return { matchId, matchName, scorecard, status: matchStatus };
             } catch (error) {
                 console.error(`Error fetching scorecard for match ID ${matchId}:`, error);
-                return { matchId, matchName, scorecard: null, status: 'endmatch', error: 'Failed to fetch scorecard' };
+                return { matchId, matchName, scorecard: null, status: 'live' }; // Mark as live, even without scorecard
             }
         });
 
@@ -130,45 +150,5 @@ setInterval(async () => {
         console.error('Error in scheduled API hit:', error);
     }
 }, 900000); // 900,000 ms = 15 minutes
-
-module.exports = getLiveMatchesAndScorecards;
-
-
-
-
-
-
-
-
-
-
-
-// Function to get scorecard by matchId using only cached data
-const getMatchScorecardById = async (req, res) => {
-    const { matchId } = req.params; // Get matchId from the request parameters
-    try {
-        // Get all cached scorecard data
-        const allScoreCards = cache.get('scoreCardData');
-        if (!allScoreCards) {
-            return res.status(404).json({ message: 'No scorecards found in cache' });
-        }
-
-        // Filter scorecard by matchId
-        const scorecardEntry = allScoreCards.find(sc => sc.matchId == matchId); // Use == to ensure type coercion if matchId is a string
-
-        if (scorecardEntry) {
-            console.log(`Returning cached scorecard for match ID ${matchId}`);
-            return res.status(200).json(scorecardEntry);
-        }
-
-        // If match not found in cache
-        return res.status(404).json({ message: 'Match not found in cache' });
-
-    } catch (error) {
-        console.error('Error fetching match scorecard:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-};
-
 
 module.exports = { getLiveMatchesAndScorecards, getMatchScorecardById };

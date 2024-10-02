@@ -1,22 +1,11 @@
 const axios = require('axios');
-const NodeCache = require('node-cache');
 const ScoreCard = require('../models/scorecardModel'); // Import the ScoreCard model
 const fetchDataFromAPI = require('../utils/apiUtils');
 
-// Initialize cache (TTL 15 minutes, i.e., 900 seconds)
-const cache = new NodeCache({ stdTTL: 900 });
-
-// Function to get live matches and their scorecards
+// Function to get live matches and their scorecards directly from the database
 const getLiveMatchesAndScorecards = async (req, res) => {
     try {
-        // Check if cached data exists
-        const cachedData = cache.get('liveMatchesAndScorecards');
-        if (cachedData) {
-            console.log('Returning cached live matches data');
-            return res.status(200).json(cachedData);
-        }
-
-        // Fetch live matches list
+        // Fetch live matches list from API
         const liveMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/liveMatches');
         const liveMatches = liveMatchesResponse.data;
 
@@ -56,8 +45,6 @@ const getLiveMatchesAndScorecards = async (req, res) => {
                 };
             } catch (error) {
                 console.error(`Error fetching scorecard for match ID ${matchId}:`, error);
-
-                // Handle case where scorecard data is missing but match is still live
                 return {
                     matchId,
                     matchName,
@@ -70,9 +57,6 @@ const getLiveMatchesAndScorecards = async (req, res) => {
         // Wait for all match details to be fetched
         const matchDetails = await Promise.all(matchDetailsPromises);
 
-        // Cache the fetched data
-        cache.set('liveMatchesAndScorecards', matchDetails);
-
         // Send the response back with all match details and scorecards
         return res.status(200).json(matchDetails);
 
@@ -82,10 +66,12 @@ const getLiveMatchesAndScorecards = async (req, res) => {
     }
 };
 
-// Schedule the API hit every 15 minutes to update the cache and database
+// Schedule the API hit every 15 minutes to update the database
 setInterval(async () => {
     try {
-        console.log('Refreshing cache...');
+        console.log('Refreshing database...');
+
+        // Fetch live matches again
         const liveMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/liveMatches');
         const liveMatches = liveMatchesResponse.data;
 
@@ -94,14 +80,53 @@ setInterval(async () => {
             return;
         }
 
-        const matchDetailsPromises = liveMatches.map(async (match) => {
-            const matchId = match.match_id;
-            const matchName = match.matchName;
+        // Fetch all live matches from the database
+        const existingMatches = await ScoreCard.find({});
+        const existingMatchIds = existingMatches.map(match => match.matchId);
+
+        // Extract current match IDs from the live matches
+        const currentMatchIds = liveMatches.map(match => match.match_id);
+
+        // Check for removed match IDs
+        const removedMatchIds = existingMatchIds.filter(id => !currentMatchIds.includes(id));
+
+        // Handle removed matches and update status to 'endmatch'
+        if (removedMatchIds.length > 0) {
+            console.log('Removed match IDs detected:', removedMatchIds);
+            const recentMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/recentMatches');
+            const recentMatches = recentMatchesResponse.data;
+
+
+            // Update scorecards and statuses for removed matches
+            const removedMatchDetailsPromises = removedMatchIds.map(async (matchId) => {
+                const matchData = recentMatches.find(match => match.match_id === matchId);
+                const existingMatch = await ScoreCard.findOne({ matchId });
+
+                if (existingMatch) {
+                    // If the match is no longer live, update the status to 'endmatch'
+                    existingMatch.status = 'endmatch';  // Update status
+                    if (matchData) {
+                        const scorecard = matchData.scorecard || null;
+                        existingMatch.scorecard = scorecard; // Update with recent match scorecard data if available
+                    } else {
+                        existingMatch.scorecard = null; // No scorecard data available
+                    }
+                    await existingMatch.save();
+                }
+
+                return { matchId, status: 'endmatch' };
+            });
+
+            await Promise.all(removedMatchDetailsPromises);
+        }
+
+        // Update scorecards for current matches
+        const matchDetailsPromises = currentMatchIds.map(async (matchId) => {
+            const matchName = liveMatches.find(match => match.match_id === matchId)?.matchName;
 
             try {
                 const scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
                 const scorecard = scorecardResponse.data?.scorecard || null;
-
                 const matchStatus = scorecard ? 'live' : 'endmatch';
 
                 const existingMatch = await ScoreCard.findOne({ matchId });
@@ -120,17 +145,14 @@ setInterval(async () => {
             }
         });
 
+        // Wait for all current match details to be fetched
         const matchDetails = await Promise.all(matchDetailsPromises);
 
-        // Update the cache
-        cache.set('liveMatchesAndScorecards', matchDetails);
-        console.log('Cache updated');
+        console.log('Database updated');
     } catch (error) {
         console.error('Error in scheduled API hit:', error);
     }
 }, 900000); // 900,000 ms = 15 minutes
-
-
 
 
 

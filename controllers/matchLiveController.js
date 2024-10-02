@@ -82,27 +82,6 @@ const getLiveMatchesAndScorecards = async (req, res) => {
     }
 };
 
-// Function to get scorecard by matchId from the database (instead of the cache)
-const getMatchScorecardById = async (req, res) => {
-    const { matchId } = req.params; // Get matchId from the request parameters
-    try {
-        // Query the database for the scorecard by matchId
-        const scorecardEntry = await ScoreCard.findOne({ matchId });
-
-        if (scorecardEntry) {
-            console.log(`Returning scorecard from database for match ID ${matchId}`);
-            return res.status(200).json(scorecardEntry);
-        }
-
-        // If match not found in the database
-        return res.status(404).json({ message: 'Match not found in database' });
-
-    } catch (error) {
-        console.error('Error fetching match scorecard from database:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-};
-
 // Schedule the API hit every 15 minutes to update the cache and database
 setInterval(async () => {
     try {
@@ -150,5 +129,42 @@ setInterval(async () => {
         console.error('Error in scheduled API hit:', error);
     }
 }, 900000); // 900,000 ms = 15 minutes
+
+
+
+
+
+
+
+
+
+
+// Function to get scorecard by matchId using only cached data
+const getMatchScorecardById = async (req, res) => {
+    const { matchId } = req.params; // Get matchId from the request parameters
+    try {
+        // Get all cached scorecard data
+        const allScoreCards = cache.get('scoreCardData');
+        if (!allScoreCards) {
+            return res.status(404).json({ message: 'No scorecards found in cache' });
+        }
+
+        // Filter scorecard by matchId
+        const scorecardEntry = allScoreCards.find(sc => sc.matchId == matchId); // Use == to ensure type coercion if matchId is a string
+
+        if (scorecardEntry) {
+            console.log(`Returning cached scorecard for match ID ${matchId}`);
+            return res.status(200).json(scorecardEntry);
+        }
+
+        // If match not found in cache
+        return res.status(404).json({ message: 'Match not found in cache' });
+
+    } catch (error) {
+        console.error('Error fetching match scorecard:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 
 module.exports = { getLiveMatchesAndScorecards, getMatchScorecardById };

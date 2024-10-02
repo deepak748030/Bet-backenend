@@ -162,8 +162,6 @@ const getCricketMatchByUserId = async (req, res) => {
 };
 
 
-
-// Create a new cricket match
 const createCricketMatch = async (req, res) => {
     try {
         const {
@@ -179,7 +177,6 @@ const createCricketMatch = async (req, res) => {
             dateWise,
             contestId,
             userId,
-            isMatchFinished, // Optional
             selectedTeam, // Ensure this is correctly passed
             selectedPlayers // Ensure selected players are passed
         } = req.body;
@@ -189,43 +186,30 @@ const createCricketMatch = async (req, res) => {
             return res.status(400).json({ msg: 'All fields are required, including selected team.' });
         }
 
-        // Check if there are bets already placed for the same contest
-        const existingBets = await CricketMatch.find({ contestId }).sort({ createdAt: 1 }); // Sort by creation time
+        // Determine if the selected team is Team A or Team B
+        const isTeamASelected = selectedTeam.id === teamA.id;
+        const selectedTeamId = selectedTeam.id;
+        const oppositeTeamId = isTeamASelected ? teamB.id : teamA.id;
 
-        // Initialize isBetAccepted based on existing bets
-        let isBetAccepted = existingBets.length === 0;
+        // Check if there are existing bets for the opposite team in the same contest
+        const oppositeTeamBet = await CricketMatch.findOne({
+            contestId,
+            'selectedTeam.id': oppositeTeamId,
+            isBetAccepted: false // Only check for unaccepted bets
+        });
 
-        // If there are existing bets, process them
-        if (existingBets.length > 0) {
-            const teamACount = existingBets.filter(bet => bet.selectedTeam.id === teamA.id).length;
-            const teamBCount = existingBets.filter(bet => bet.selectedTeam.id === teamB.id).length;
+        // Initialize isBetAccepted based on whether an opposite team bet exists
+        let isBetAccepted = false;
 
-            // If both teams have bets, accept bets on both sides
-            if (teamACount > 0 && teamBCount > 0) {
-                isBetAccepted = true;
+        if (oppositeTeamBet) {
+            // If opposite team bet exists, set isBetAccepted to true for both teams
+            isBetAccepted = true;
 
-                // Update existing bets to accept them
-                await CricketMatch.updateMany(
-                    { contestId, selectedTeam: { $in: [teamA.id, teamB.id] } },
-                    { $set: { isBetAccepted: true } }
-                );
-            } else if (teamACount > 0) {
-                // If only Team A has bets, accept bets for Team A
-                isBetAccepted = true;
-
-                await CricketMatch.updateMany(
-                    { contestId, selectedTeam: { id: teamA.id } },
-                    { $set: { isBetAccepted: true } }
-                );
-            } else if (teamBCount > 0) {
-                // If only Team B has bets, accept bets for Team B
-                isBetAccepted = true;
-
-                await CricketMatch.updateMany(
-                    { contestId, selectedTeam: { id: teamB.id } },
-                    { $set: { isBetAccepted: true } }
-                );
-            }
+            // Update the opposite team's bet to accept it
+            await CricketMatch.updateOne(
+                { _id: oppositeTeamBet._id },
+                { $set: { isBetAccepted: true } }
+            );
         }
 
         // Create a new match instance
@@ -242,13 +226,12 @@ const createCricketMatch = async (req, res) => {
             dateWise,
             contestId,
             userId,
-            isMatchFinished: isMatchFinished || false, // Set default value as false
             selectedTeam, // Include the selectedTeam field in the match creation
             selectedPlayers, // Include selectedPlayers field
-            isBetAccepted // Set based on existing bets
+            isBetAccepted // Set based on the presence of an opposite team bet
         });
 
-        // Save the match to the database
+        // Save the new match (bet) to the database
         await newCricketMatch.save();
 
         // Respond with the created match

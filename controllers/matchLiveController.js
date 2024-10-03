@@ -20,8 +20,18 @@ const getLiveMatchesAndScorecards = async (req, res) => {
 
             try {
                 // Fetch scorecard for each match
-                const scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
-                const scorecard = scorecardResponse.data?.scorecard || null;
+                let scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
+                let scorecard = scorecardResponse.data?.scorecard || null;
+
+                // If scorecard is null, fallback to recentMatches API
+                if (!scorecard) {
+                    const recentMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/recentMatches');
+                    const recentMatches = recentMatchesResponse.data;
+
+                    // Find the match in recentMatches data
+                    const recentMatch = recentMatches.find(recentMatch => recentMatch.match_id === matchId);
+                    scorecard = recentMatch ? recentMatch.scorecard || null : null;
+                }
 
                 const matchStatus = scorecard ? 'live' : 'endmatch';
 
@@ -122,8 +132,19 @@ setInterval(async () => {
         // Update scorecards for current matches
         const matchDetailsPromises = currentMatchIds.map(async (matchId) => {
             try {
-                const scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
-                const scorecard = scorecardResponse.data?.scorecard || null;
+                let scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
+                let scorecard = scorecardResponse.data?.scorecard || null;
+
+                // If scorecard is null, fallback to recentMatches API
+                if (!scorecard) {
+                    const recentMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/recentMatches');
+                    const recentMatches = recentMatchesResponse.data;
+
+                    // Find the match in recentMatches data
+                    const recentMatch = recentMatches.find(recentMatch => recentMatch.match_id === matchId);
+                    scorecard = recentMatch ? recentMatch.scorecard || null : null;
+                }
+
                 const matchStatus = scorecard ? 'live' : 'endmatch';
 
                 const existingMatch = await ScoreCard.findOne({ matchId });
@@ -153,28 +174,21 @@ setInterval(async () => {
 
 
 
-
-
-// Function to get scorecard by matchId using only cached data
+// Function to get scorecard by matchId using the database
 const getMatchScorecardById = async (req, res) => {
     const { matchId } = req.params; // Get matchId from the request parameters
     try {
-        // Get all cached scorecard data
-        const allScoreCards = cache.get('scoreCardData');
-        if (!allScoreCards) {
-            return res.status(404).json({ message: 'No scorecards found in cache' });
-        }
+        // Query the database to find the scorecard by matchId
+        const scorecardEntry = await ScoreCard.findOne({ matchId });
 
-        // Filter scorecard by matchId
-        const scorecardEntry = allScoreCards.find(sc => sc.matchId == matchId); // Use == to ensure type coercion if matchId is a string
-
+        // If scorecard is found, return it
         if (scorecardEntry) {
-            console.log(`Returning cached scorecard for match ID ${matchId}`);
+            console.log(`Returning scorecard for match ID ${matchId}`);
             return res.status(200).json(scorecardEntry);
         }
 
-        // If match not found in cache
-        return res.status(404).json({ message: 'Match not found in cache' });
+        // If match not found in the database
+        return res.status(404).json({ message: 'Match not found in database' });
 
     } catch (error) {
         console.error('Error fetching match scorecard:', error);

@@ -7,7 +7,7 @@ const fetchDataFromAPI = async (endpoint) => {
         method: 'GET',
         url: endpoint,
         headers: {
-            'x-rapidapi-key': 'b55e882438msh8961edaac57a08dp13336fjsn4e5a967292f7', // Your real API key
+            'x-rapidapi-key': 'd6a439bb1fmshd0b9d1b5a439a28p123e97jsn3b9786fc696b', // Your real API key
             'x-rapidapi-host': 'cricket-live-line1.p.rapidapi.com', // Host for the cricket API
         },
     };

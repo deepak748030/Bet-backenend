@@ -11,7 +11,7 @@ router.post('/signup', registerUser);
 // Place a Bet
 router.get('/get/:id', getUserById);
 
-router.get('/get/allusers', getAllUsers);
+router.get('/getallusers', getAllUsers);
 
 
 module.exports = router;

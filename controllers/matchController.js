@@ -14,7 +14,7 @@ const fetchMatchData = async () => {
         method: 'GET',
         url: 'https://cricket-live-line1.p.rapidapi.com/upcomingMatches',
         headers: {
-            'x-rapidapi-key': 'd6a439bb1fmshd0b9d1b5a439a28p123e97jsn3b9786fc696b', // Replace with your API key
+            'x-rapidapi-key': '9f5c5d2a7dmsh34d47e0a14cd35cp1a0e6bjsncbf8de602bb2', // Replace with your API key
             'x-rapidapi-host': 'cricket-live-line1.p.rapidapi.com',
         },
     };

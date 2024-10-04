@@ -118,4 +118,28 @@ const getUserById = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getUserById };
+// Get all users
+const getAllUsers = async (req, res) => {
+    try {
+        // Fetch all users (without filtering by _id)
+        const users = await User.find({}); // Empty object means no filter, fetch all users
+
+        // If no users found
+        if (!users || users.length === 0) {
+            return res.status(404).json({ message: 'No users found' });
+        }
+
+        // Respond with the user data
+        res.status(200).json({
+            message: 'Users retrieved successfully',
+            users
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+
+
+module.exports = { registerUser, loginUser, getUserById, getAllUsers };

@@ -1,25 +1,34 @@
 const axios = require('axios');
 const ScoreCard = require('../models/scorecardModel'); // Import the ScoreCard model
 const fetchDataFromAPI = require('../utils/apiUtils');
+const { updateFinishedMatches } = require('./matchFinish');
 
+// Function to get live matches and their scorecards directly from the database
 // Function to get live matches and their scorecards directly from the database
 const getLiveMatchesAndScorecards = async (req, res) => {
     try {
         // Fetch live matches list from API
         const liveMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/liveMatches');
         const liveMatches = liveMatchesResponse.data;
+        updateFinishedMatches()
 
         // Handle case where no live matches are found
         if (!liveMatches || liveMatches.length === 0) {
+            // Update all matches in the database to 'endmatch' if no live matches are found
+            await ScoreCard.updateMany({ status: 'live' }, { status: 'endmatch' });
             return res.status(404).json({ message: 'No live matches found' });
         }
 
-        // Extract match IDs and fetch scorecards for each match
+        // Extract match IDs from live matches
+        const currentMatchIds = liveMatches.map(match => match.match_id);
+
+        // Fetch scorecards for each live match
         const matchDetailsPromises = liveMatches.map(async (match) => {
             const matchId = match.match_id;
+            // console.log(matchId)
 
             try {
-                // Fetch scorecard for each match
+                // Fetch scorecard for each match from the live scorecard API
                 let scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
                 let scorecard = scorecardResponse.data?.scorecard || null;
 
@@ -27,18 +36,25 @@ const getLiveMatchesAndScorecards = async (req, res) => {
                 if (!scorecard) {
                     const recentMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/recentMatches');
                     const recentMatches = recentMatchesResponse.data;
-
+                    console.log('recent hit....')
                     // Find the match in recentMatches data
                     const recentMatch = recentMatches.find(recentMatch => recentMatch.match_id === matchId);
-                    scorecard = recentMatch ? recentMatch.scorecard || null : null;
+                    if (recentMatch) {
+                        // Jo match id se  Bno to Bo ab ENd  Ho gao  Ab ka kr hai ke jo data save hego cricket matches mai bbinbe hm dekh hai joki bhi match id jo recentMatch.match_id Binki isMatchFinished true ho je 
+                        scorecard = recentMatch.scorecard || null; // Use scorecard from recentMatches if available
+                        console.log(recentMatch.scorecard)
+                        // MatchId ,Finished Status true ,WithTeaamId
+                        // Sbse phle check result mai taem_a name hjai ya team_b ko name hai ya short name dono kho check krke hm bam me se team_id jo rhegi winner ki id 
+                        //J akho request mai bhej de or data base mai check kr hai ke ja matchId se jo win team konne selecte kri 
+                    }
                 }
 
-                const matchStatus = scorecard ? 'live' : 'endmatch';
+                const matchStatus = 'live';
 
                 // Update or insert into MongoDB
                 const existingMatch = await ScoreCard.findOne({ matchId });
                 if (existingMatch) {
-                    existingMatch.scorecard = scorecard;
+                    existingMatch.scorecard = scorecard; // Update scorecard (never null from recentMatches)
                     existingMatch.status = matchStatus;
                     await existingMatch.save();
                 } else {
@@ -64,6 +80,9 @@ const getLiveMatchesAndScorecards = async (req, res) => {
         // Wait for all match details to be fetched
         const matchDetails = await Promise.all(matchDetailsPromises);
 
+        // Update all matches that are not currently live to 'endmatch'
+        await ScoreCard.updateMany({ matchId: { $nin: currentMatchIds }, status: 'live' }, { status: 'endmatch' });
+
         // Send the response back with all match details and scorecards
         return res.status(200).json(matchDetails);
 
@@ -83,55 +102,19 @@ setInterval(async () => {
         const liveMatches = liveMatchesResponse.data;
 
         if (!liveMatches || liveMatches.length === 0) {
+            // No live matches, mark all existing 'live' matches as 'endmatch'
+            await ScoreCard.updateMany({ status: 'live' }, { status: 'endmatch' });
             console.log('No live matches to update');
             return;
         }
 
-        // Fetch all live matches from the database
-        const existingMatches = await ScoreCard.find({});
-        const existingMatchIds = existingMatches.map(match => match.matchId);
-
         // Extract current match IDs from the live matches
         const currentMatchIds = liveMatches.map(match => match.match_id);
 
-        // Check for removed match IDs
-        const removedMatchIds = existingMatchIds.filter(id => !currentMatchIds.includes(id));
-
-        // Handle removed matches and update status to 'endmatch'
-        if (removedMatchIds.length > 0) {
-            console.log('Removed match IDs detected:', removedMatchIds);
-            const recentMatchesResponse = await fetchDataFromAPI('https://cricket-live-line1.p.rapidapi.com/recentMatches');
-            const recentMatches = recentMatchesResponse.data;
-
-            // Update scorecards and statuses for removed matches
-            const removedMatchDetailsPromises = removedMatchIds.map(async (matchId) => {
-                const existingMatch = await ScoreCard.findOne({ matchId });
-
-                if (existingMatch) {
-                    // If the match is no longer live, update the status to 'endmatch'
-                    existingMatch.status = 'endmatch'; // Update status
-
-                    // Check for recent match data
-                    const matchData = recentMatches.find(match => match.match_id === matchId);
-                    if (matchData) {
-                        const scorecard = matchData.scorecard || null;
-                        existingMatch.scorecard = scorecard; // Update with recent match scorecard data if available
-                    } else {
-                        existingMatch.scorecard = null; // No scorecard data available
-                    }
-
-                    await existingMatch.save();
-                }
-
-                return { matchId, status: 'endmatch' };
-            });
-
-            await Promise.all(removedMatchDetailsPromises);
-        }
-
-        // Update scorecards for current matches
+        // Update scorecards for current live matches
         const matchDetailsPromises = currentMatchIds.map(async (matchId) => {
             try {
+                // Fetch scorecard from the live scorecard API
                 let scorecardResponse = await fetchDataFromAPI(`https://cricket-live-line1.p.rapidapi.com/match/${matchId}/scorecard`);
                 let scorecard = scorecardResponse.data?.scorecard || null;
 
@@ -142,14 +125,16 @@ setInterval(async () => {
 
                     // Find the match in recentMatches data
                     const recentMatch = recentMatches.find(recentMatch => recentMatch.match_id === matchId);
-                    scorecard = recentMatch ? recentMatch.scorecard || null : null;
+                    if (recentMatch) {
+                        scorecard = recentMatch.scorecard || null; // Use recentMatches scorecard if available
+                    }
                 }
 
-                const matchStatus = scorecard ? 'live' : 'endmatch';
+                const matchStatus = 'live';
 
                 const existingMatch = await ScoreCard.findOne({ matchId });
                 if (existingMatch) {
-                    existingMatch.scorecard = scorecard;
+                    existingMatch.scorecard = scorecard; // Update with valid scorecard
                     existingMatch.status = matchStatus;
                     await existingMatch.save();
                 } else {
@@ -164,13 +149,18 @@ setInterval(async () => {
         });
 
         // Wait for all current match details to be fetched
-        const matchDetails = await Promise.all(matchDetailsPromises);
+        await Promise.all(matchDetailsPromises);
+
+        // Mark all matches not in the live matches list as 'endmatch'
+        await ScoreCard.updateMany({ matchId: { $nin: currentMatchIds }, status: 'live' }, { status: 'endmatch' });
 
         console.log('Database updated');
     } catch (error) {
         console.error('Error in scheduled API hit:', error);
     }
 }, 900000); // 900,000 ms = 15 minutes
+
+
 
 
 

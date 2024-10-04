@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUserById } = require('../controllers/userControllers');
+const { registerUser, loginUser, getUserById, getAllUsers } = require('../controllers/userControllers');
 
 // Add a new transaction
 router.post('/login', loginUser);
@@ -10,6 +10,8 @@ router.post('/signup', registerUser);
 
 // Place a Bet
 router.get('/get/:id', getUserById);
+
+router.get('/get/allusers', getAllUsers);
 
 
 module.exports = router;

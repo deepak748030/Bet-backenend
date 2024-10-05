@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getUpcomingMatches, createCricketMatch, getCricketMatchByUserId, searchMatches } = require('../controllers/matchController');
 const { getSquad } = require('../controllers/squadController');
-const { createSpot, getSpotById, getSpotByMatchId } = require('../controllers/spotController');
+const { createSpot, getSpotById, getSpotByMatchId, deleteSpot, updateSpot } = require('../controllers/spotController');
 
 
 // POST request to create a new match

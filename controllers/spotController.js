@@ -133,4 +133,78 @@ const getSpotById = async (req, res) => {
     }
 };
 
-module.exports = { createSpot, getSpotById, getSpotByMatchId };
+
+const updateSpot = async (req, res) => {
+    const { id } = req.params; // Spot ID from params
+    const { totalSpot, commission, amount } = req.body;
+
+    try {
+        // Find the spot by ID and update it
+        const updatedSpot = await Spot.findByIdAndUpdate(
+            id,
+            {
+                totalSpot,
+                availableSpots: totalSpot, // Ensure availableSpots is updated to match totalSpot if provided
+                commission,
+                amount,
+            },
+            { new: true } // Return the updated document
+        );
+
+        // Check if the spot was found and updated
+        if (!updatedSpot) {
+            return res.status(404).json({
+                msg: 'Spot not found.',
+                status: false,
+            });
+        }
+
+        // Respond with success message and updated data
+        return res.status(200).json({
+            msg: 'Spot updated successfully.',
+            status: true,
+            data: updatedSpot,
+        });
+    } catch (error) {
+        console.error('Error updating spot:', error.message);
+        return res.status(500).json({
+            msg: 'Error updating spot. Please try again later.',
+            status: false,
+            error: error.message,
+        });
+    }
+};
+
+const deleteSpot = async (req, res) => {
+    const { id } = req.params; // Spot ID from params
+
+    try {
+        // Find the spot by ID and delete it
+        const deletedSpot = await Spot.findByIdAndDelete(id);
+
+        // Check if the spot was found and deleted
+        if (!deletedSpot) {
+            return res.status(404).json({
+                msg: 'Spot not found.',
+                status: false,
+            });
+        }
+
+        // Respond with success message
+        return res.status(200).json({
+            msg: 'Spot deleted successfully.',
+            status: true,
+            data: deletedSpot,
+        });
+    } catch (error) {
+        console.error('Error deleting spot:', error.message);
+        return res.status(500).json({
+            msg: 'Error deleting spot. Please try again later.',
+            status: false,
+            error: error.message,
+        });
+    }
+};
+
+
+module.exports = { createSpot, getSpotById, getSpotByMatchId, updateSpot, deleteSpot };

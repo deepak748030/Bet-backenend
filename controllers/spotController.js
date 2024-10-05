@@ -3,30 +3,30 @@ const Spot = require('../models/spotModels');
 // Create a new spot
 const createSpot = async (req, res) => {
     const { totalSpot, matchId, commission, amount } = req.body;
-
+    console.log(totalSpot, matchId, commission, amount)
     // Validate input data
-    if (!totalSpot || typeof totalSpot !== 'number' || totalSpot <= 0) {
+    if (!totalSpot || totalSpot <= 0) {
         return res.status(400).json({
             msg: 'Total spot is required and must be a positive number.',
             status: false,
         });
     }
 
-    if (!matchId || typeof matchId !== 'string' || matchId.trim() === '') {
+    if (!matchId) {
         return res.status(400).json({
             msg: 'Match ID is required and must be a valid non-empty string.',
             status: false,
         });
     }
 
-    if (commission === undefined || typeof commission !== 'number' || commission < 0) {
+    if (commission === undefined || commission < 0) {
         return res.status(400).json({
             msg: 'Commission is required and must be a non-negative number.',
             status: false,
         });
     }
 
-    if (amount === undefined || typeof amount !== 'number' || amount < 0) {
+    if (amount === undefined || amount < 0) {
         return res.status(400).json({
             msg: 'Amount is required and must be a non-negative number.',
             status: false,

@@ -277,39 +277,22 @@ const createCricketMatch = async (req, res) => {
             return res.status(400).json({ msg: 'All fields are required, including selected team.' });
         }
 
-        // Find the user by userId and populate wallet fields
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found.' });
-        }
-
         // Fetch the spot based on contestId
         const spot = await Spot.findById(contestId);
         if (!spot) {
             return res.status(404).json({ msg: 'Spot not found for the given contestId.' });
         }
 
-        // Get the spot amount from the spot
-        const spotAmount = spot.amount;
-
-        // Check if the user has enough balance to join the spot
-        let totalBalance = user.depositWallet + user.winningWallet;
-
-        if (totalBalance < spotAmount) {
-            return res.status(400).json({ msg: 'Balance is low.', status: false });
+        // Check if there are available spots left
+        if (spot.availableSpots <= 0) {
+            return res.status(400).json({ msg: 'No spots left to join.' });
         }
 
-        // Deduct the amount from depositWallet first, then from winningWallet if necessary
-        if (user.depositWallet >= spotAmount) {
-            user.depositWallet -= spotAmount;
-        } else {
-            let remainingAmount = spotAmount - user.depositWallet;
-            user.depositWallet = 0; // Empty the depositWallet
-            user.winningWallet -= remainingAmount; // Deduct the remaining amount from winningWallet
-        }
+        // Decrease the available spots by 1
+        spot.availableSpots -= 1;
 
-        // Save the updated user wallet data
-        await user.save();
+        // Save the updated spot data
+        await spot.save();
 
         // Determine if the selected team is Team A or Team B
         const isTeamASelected = selectedTeam.id === teamA.id;
@@ -361,7 +344,7 @@ const createCricketMatch = async (req, res) => {
 
         // Respond with the created match
         return res.status(201).json({
-            msg: 'Cricket match created successfully and amount deducted.',
+            msg: 'Cricket match created successfully, spot joined.',
             status: true,
             data: newCricketMatch
         });
@@ -374,7 +357,6 @@ const createCricketMatch = async (req, res) => {
         });
     }
 };
-
 
 
 

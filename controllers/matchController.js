@@ -252,7 +252,6 @@ const getCricketMatchByUserId = async (req, res) => {
 //     }
 // };
 
-
 const createCricketMatch = async (req, res) => {
     try {
         const {
@@ -300,22 +299,25 @@ const createCricketMatch = async (req, res) => {
         const oppositeTeamId = isTeamASelected ? teamB.id : teamA.id;
 
         // Check if there are existing bets for the opposite team in the same contest
-        const oppositeTeamBet = await CricketMatch.findOne({
+        const oppositeTeamBets = await CricketMatch.find({
             contestId,
             'selectedTeam.id': oppositeTeamId,
             isBetAccepted: false // Only check for unaccepted bets
-        });
+        }).sort({ createdAt: 1 }); // Sort by createdAt to get the oldest bet first
 
         // Initialize isBetAccepted based on whether an opposite team bet exists
         let isBetAccepted = false;
 
-        if (oppositeTeamBet) {
-            // If opposite team bet exists, set isBetAccepted to true for both teams
+        // If there are opposite team bets, update the oldest one
+        if (oppositeTeamBets.length > 0) {
+            // Update the oldest opposite team's bet to accept it
+            const oldestOppositeBet = oppositeTeamBets[0]; // Get the oldest bet
+
             isBetAccepted = true;
 
-            // Update the opposite team's bet to accept it
+            // Update the oldest team's bet to accept it
             await CricketMatch.updateOne(
-                { _id: oppositeTeamBet._id },
+                { _id: oldestOppositeBet._id },
                 { $set: { isBetAccepted: true } }
             );
         }
@@ -357,6 +359,7 @@ const createCricketMatch = async (req, res) => {
         });
     }
 };
+
 
 
 

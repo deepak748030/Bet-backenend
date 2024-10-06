@@ -127,8 +127,8 @@ const getCricketMatchByUserId = async (req, res) => {
             isMatchFinished: false // Only return matches that are finished
         })
             .populate('contestId', '-__v')  // Populates data from Contest model, excluding __v field
-            .populate('userId', '-password -__v');  // Populates data from User model, excluding password and __v
-
+            .populate('userId', '-password -__v')  // Populates data from User model, excluding password and __v
+            .sort({ createdAt: -1 });
         // If no matches are found, return a 404 error
         if (!cricketMatches || cricketMatches.length === 0) {
             return res.status(404).json({

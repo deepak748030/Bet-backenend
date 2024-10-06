@@ -158,13 +158,14 @@ const refundTransaction = async (req, res) => {
   }
 };
 
+
 // Get bets by User ID
 const getBetByUserId = async (req, res) => {
   const { userId } = req.params;
 
   try {
     // Fetch all bets for the user
-    const bets = await Transaction.find({ userId, type: 'bet' });
+    const bets = await Transaction.find({ userId, type: 'bet' }).sort({ createdAt: -1 });
 
     // Count total bets and categorize by result
     const totalBets = bets.length;
@@ -189,6 +190,8 @@ const getBetByUserId = async (req, res) => {
     });
   }
 };
+
+
 
 // Controller function to handle getting recent transactions by userId and count
 const getRecentTrxByUserId = async (req, res) => {

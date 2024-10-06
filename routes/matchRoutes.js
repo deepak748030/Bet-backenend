@@ -11,7 +11,8 @@ router.post('/matches', createCricketMatch);
 // POST route to create a new spot
 router.post('/spots', createSpot);
 
-
+// Route for getting spot by matchId (GET)
+router.get('/spot/:id', getSpotById);
 
 // Update spot by ID
 router.put('/spot/:id', updateSpot);
@@ -20,16 +21,13 @@ router.put('/spot/:id', updateSpot);
 router.delete('/spot/:id', deleteSpot);
 
 
+router.get('/spot/matchid/:matchId', getSpotByMatchId);
 
 // Define the route for fetching upcoming matches
 router.get('/upcomingmatches', getUpcomingMatches);
 
 router.get('/squad/:id', getSquad);
 
-// Route for getting spot by matchId (GET)
-router.get('/spot/:id', getSpotById);
-
-router.get('/spot/matchid/:matchId', getSpotByMatchId);
 
 // POST request to create a new match
 router.get('/matches/:userId', getCricketMatchByUserId);

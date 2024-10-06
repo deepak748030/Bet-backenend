@@ -1,6 +1,8 @@
 const axios = require('axios');
 const NodeCache = require('node-cache');
 const Match = require('../models/matchModels');
+const User = require('../models/userModels')
+const Spot = require('../models/spotModels')
 const CricketMatch = require('../models/cricketMatchModel');  // Update the model name here
 
 // Initialize cache with a 10-minute TTL
@@ -162,6 +164,95 @@ const getCricketMatchByUserId = async (req, res) => {
 };
 
 
+// const createCricketMatch = async (req, res) => {
+//     try {
+//         const {
+//             matchId,
+//             series,
+//             matchType,
+//             matchDate,
+//             matchTime,
+//             venue,
+//             teamA,
+//             teamB,
+//             seriesType,
+//             dateWise,
+//             contestId,
+//             userId,
+//             selectedTeam, // Ensure this is correctly passed
+//             selectedPlayers // Ensure selected players are passed
+//         } = req.body;
+
+//         // Validate required fields
+//         if (!matchId || !series || !matchType || !matchDate || !matchTime || !venue || !teamA || !teamB || !seriesType || !dateWise || !contestId || !userId || !selectedTeam) {
+//             return res.status(400).json({ msg: 'All fields are required, including selected team.' });
+//         }
+
+//         // Determine if the selected team is Team A or Team B
+//         const isTeamASelected = selectedTeam.id === teamA.id;
+//         const selectedTeamId = selectedTeam.id;
+//         const oppositeTeamId = isTeamASelected ? teamB.id : teamA.id;
+
+//         // Check if there are existing bets for the opposite team in the same contest
+//         const oppositeTeamBet = await CricketMatch.findOne({
+//             contestId,
+//             'selectedTeam.id': oppositeTeamId,
+//             isBetAccepted: false // Only check for unaccepted bets
+//         });
+
+//         // Initialize isBetAccepted based on whether an opposite team bet exists
+//         let isBetAccepted = false;
+
+//         if (oppositeTeamBet) {
+//             // If opposite team bet exists, set isBetAccepted to true for both teams
+//             isBetAccepted = true;
+
+//             // Update the opposite team's bet to accept it
+//             await CricketMatch.updateOne(
+//                 { _id: oppositeTeamBet._id },
+//                 { $set: { isBetAccepted: true } }
+//             );
+//         }
+
+//         // Create a new match instance
+//         const newCricketMatch = new CricketMatch({
+//             matchId,
+//             series,
+//             matchType,
+//             matchDate,
+//             matchTime,
+//             venue,
+//             teamA,
+//             teamB,
+//             seriesType,
+//             dateWise,
+//             contestId,
+//             userId,
+//             selectedTeam, // Include the selectedTeam field in the match creation
+//             selectedPlayers, // Include selectedPlayers field
+//             isBetAccepted // Set based on the presence of an opposite team bet
+//         });
+
+//         // Save the new match (bet) to the database
+//         await newCricketMatch.save();
+
+//         // Respond with the created match
+//         return res.status(201).json({
+//             msg: 'Cricket match created successfully.',
+//             status: true,
+//             data: newCricketMatch
+//         });
+//     } catch (error) {
+//         console.error('Error creating cricket match:', error.message);
+//         return res.status(500).json({
+//             msg: 'Error creating cricket match.',
+//             status: false,
+//             error: error.message
+//         });
+//     }
+// };
+
+
 const createCricketMatch = async (req, res) => {
     try {
         const {
@@ -185,6 +276,40 @@ const createCricketMatch = async (req, res) => {
         if (!matchId || !series || !matchType || !matchDate || !matchTime || !venue || !teamA || !teamB || !seriesType || !dateWise || !contestId || !userId || !selectedTeam) {
             return res.status(400).json({ msg: 'All fields are required, including selected team.' });
         }
+
+        // Find the user by userId and populate wallet fields
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found.' });
+        }
+
+        // Fetch the spot based on contestId
+        const spot = await Spot.findById(contestId);
+        if (!spot) {
+            return res.status(404).json({ msg: 'Spot not found for the given contestId.' });
+        }
+
+        // Get the spot amount from the spot
+        const spotAmount = spot.amount;
+
+        // Check if the user has enough balance to join the spot
+        let totalBalance = user.depositWallet + user.winningWallet;
+
+        if (totalBalance < spotAmount) {
+            return res.status(400).json({ msg: 'Balance is low.', status: false });
+        }
+
+        // Deduct the amount from depositWallet first, then from winningWallet if necessary
+        if (user.depositWallet >= spotAmount) {
+            user.depositWallet -= spotAmount;
+        } else {
+            let remainingAmount = spotAmount - user.depositWallet;
+            user.depositWallet = 0; // Empty the depositWallet
+            user.winningWallet -= remainingAmount; // Deduct the remaining amount from winningWallet
+        }
+
+        // Save the updated user wallet data
+        await user.save();
 
         // Determine if the selected team is Team A or Team B
         const isTeamASelected = selectedTeam.id === teamA.id;
@@ -236,7 +361,7 @@ const createCricketMatch = async (req, res) => {
 
         // Respond with the created match
         return res.status(201).json({
-            msg: 'Cricket match created successfully.',
+            msg: 'Cricket match created successfully and amount deducted.',
             status: true,
             data: newCricketMatch
         });

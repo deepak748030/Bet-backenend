@@ -1,0 +1,144 @@
+// controllers/userController.js
+const User = require('../mxmodels/mxUserModel');
+const jwt = require('jsonwebtoken');
+
+// fxRegisterUser - Register a new user
+const fxRegisterUser = async (req, res) => {
+    const { name, mobile, email } = req.body;
+
+    try {
+        // Check if user already exists
+        const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User with email or mobile number already exists' });
+        }
+
+        // Create new user
+        const newUser = new User({ name, mobile, email });
+        await newUser.save();
+
+        // Generate JWT
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET || 'secretkey', {
+            expiresIn: '1d', // Token expiration time
+        });
+
+        // Respond with user data and token
+        res.status(201).json({
+            message: 'User registered successfully',
+            user: {
+                _id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                mobile: newUser.mobile,
+                isBlocked: newUser.isBlocked,
+                registerDate: newUser.registerDate,
+                winningWallet: newUser.winningWallet,
+                depositWallet: newUser.depositWallet,
+                bonusWallet: newUser.bonusWallet,
+            },
+            token, // JWT token
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+// fxLoginUser - Login user with mobile number
+const fxLoginUser = async (req, res) => {
+    const { mobile } = req.body;
+
+    try {
+        // Check if user exists by mobile number
+        const user = await User.findOne({ mobile });
+        if (!user) {
+            return res.status(400).json({ message: 'User not registered' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secretkey', {
+            expiresIn: '1d', // Token expiration time
+        });
+
+        // Respond with user data and token
+        res.status(200).json({
+            message: 'Login successful',
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                isBlocked: user.isBlocked,
+                registerDate: user.registerDate,
+                winningWallet: user.winningWallet,
+                depositWallet: user.depositWallet,
+                bonusWallet: user.bonusWallet,
+            },
+            token, // JWT token
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+// fxGetUserById - Get user by userId
+const fxGetUserById = async (req, res) => {
+    const { id } = req.params; // Extract the userId from request parameters
+
+    try {
+        // Find the user by id
+        const user = await User.findById(id);
+
+        // Check if user exists
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Respond with the user data
+        res.status(200).json({
+            message: 'User retrieved successfully',
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                isBlocked: user.isBlocked,
+                registerDate: user.registerDate,
+                lastActiveDate: user.lastActiveDate,
+                winningWallet: user.winningWallet,
+                depositWallet: user.depositWallet,
+                bonusWallet: user.bonusWallet,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+// fxGetAllUsers - Get all users
+const fxGetAllUsers = async (req, res) => {
+    try {
+        // Fetch all users (without filtering by _id)
+        const users = await User.find({}); // Empty object means no filter, fetch all users
+
+        // If no users found
+        if (!users || users.length === 0) {
+            return res.status(404).json({ message: 'No users found' });
+        }
+
+        // Respond with the user data
+        res.status(200).json({
+            message: 'Users retrieved successfully',
+            users,
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+module.exports = {
+    fxRegisterUser,
+    fxLoginUser,
+    fxGetUserById,
+    fxGetAllUsers,
+};

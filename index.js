@@ -33,10 +33,13 @@ app.use('/api', require('./routes/liveMatchRoutes'));
 app.use('/api/banner', require('./routes/bannerRoutes'));
 
 //bookie or FX Routes
-app.use('/api/fx/users', require('./bookie/mxroute/mxUserRoutes'));
-app.use('/api/fx/spots', require('./bookie/mxroute/mxSpotRoutes'));
-app.use('/api/fx/cricketmatch', require('./bookie/mxroute/mxCricketMatchRoute'));
-app.use('/api/fx/transaction', require('./bookie/mxroute/mxTransactionRoute'));
+app.use('/api/mx/users', require('./bookie/mxroute/mxUserRoutes'));
+app.use('/api/mx/spots', require('./bookie/mxroute/mxSpotRoutes'));
+app.use('/api/mx/cricketmatch', require('./bookie/mxroute/mxCricketMatchRoute'));
+app.use('/api/mx/transaction', require('./bookie/mxroute/mxTransactionRoute'));
+app.use('/api/mx', require('./bookie/mxroute/localMatchRoute'));
+app.use('/api/mx', require('./bookie/mxroute/bookieRoute'));
+
 
 
 // Start the server

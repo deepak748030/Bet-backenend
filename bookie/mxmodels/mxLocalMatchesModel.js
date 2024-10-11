@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 // Define the local match schema
 const localMatchSchema = new mongoose.Schema({
     matchId: {
-        type: Number,
-        unique: true,
+        type: Number
     },
     series: String,
     matchType: String,

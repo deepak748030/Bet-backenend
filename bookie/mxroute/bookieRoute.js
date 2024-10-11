@@ -1,5 +1,6 @@
 const express = require('express');
-const { createBookie } = require('../mxmodels/bookieController');
+const { createBookie } = require('../mxcontrollers/bookieController');
+
 const router = express.Router();
 
 router.post('/bookie', createBookie)

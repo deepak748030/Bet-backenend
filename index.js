@@ -13,7 +13,8 @@ connectDB();
 
 // Enable CORS for all routes
 app.use(cors({
-    origin: '*'
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
 
 // Middleware to parse incoming requests

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUserById, getAllUsers } = require('../controllers/userControllers');
+const { registerUser, loginUser, getUserById, getAllUsers, toggleBlockUser, deleteUser } = require('../controllers/userControllers');
 
 // Add a new transaction
 router.post('/login', loginUser);

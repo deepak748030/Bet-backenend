@@ -141,5 +141,51 @@ const getAllUsers = async (req, res) => {
 };
 
 
+// Block or Unblock a user
+const toggleBlockUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
 
-module.exports = { registerUser, loginUser, getUserById, getAllUsers };
+        // Find the user by ID
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Toggle the isBlocked field
+        user.isBlocked = !user.isBlocked;
+        await user.save();
+
+        // Return the updated user status
+        res.status(200).json({
+            message: `User has been ${user.isBlocked ? 'blocked' : 'unblocked'} successfully`,
+            user
+        });
+    } catch (error) {
+        console.error('Error toggling block user:', error);
+        res.status(500).json({ message: 'Server error. Could not block/unblock user.' });
+    }
+};
+
+// Delete a user
+const deleteUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // Find and delete the user
+        const user = await User.findByIdAndDelete(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ message: 'Server error. Could not delete user.' });
+    }
+};
+
+
+module.exports = { registerUser, loginUser, getUserById, getAllUsers, deleteUser, toggleBlockUser };

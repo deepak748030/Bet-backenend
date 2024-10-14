@@ -13,5 +13,10 @@ router.get('/get/:id', getUserById);
 
 router.get('/getallusers', getAllUsers);
 
+// Route to block/unblock a user
+router.put('/block/:id', toggleBlockUser);
+
+// Route to delete a user
+router.delete('/delete/:id', deleteUser);
 
 module.exports = router;

@@ -11,7 +11,7 @@ router.post('/localmatch', createLocalMatch);
 // GET request to fetch all local matches
 router.get('/localmatches', getAllLocalMatches);
 
-router.get('/localmatch/:matchId', getLocalMatchByMatchId);
+// router.get('/localmatch/:matchId', getLocalMatchByMatchId);
 
 
 // POST route to create a new local match scorecard

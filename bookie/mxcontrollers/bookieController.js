@@ -1,7 +1,7 @@
 const Bookie = require('../mxmodels/mxBookieSpot'); // Import the Bookie model
 
 // Create a new bookie
-exports.createBookie = async (req, res) => {
+const createBookie = async (req, res) => {
     try {
         const { totalSpot, availableSpots, matchId, commission, amount, multiPoint, bookieId, selectedTeamId } = req.body;
 
@@ -69,5 +69,6 @@ const getBookieByMatchId = async (req, res) => {
 };
 
 module.exports = {
-    getBookieByMatchId
+    getBookieByMatchId,
+    createBookie
 };

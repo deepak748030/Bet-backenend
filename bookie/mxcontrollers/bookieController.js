@@ -40,3 +40,34 @@ exports.createBookie = async (req, res) => {
         });
     }
 };
+
+
+// GET /bookie/:matchId - Get bookie by match ID
+const getBookieByMatchId = async (req, res) => {
+    try {
+        const { matchId } = req.params;
+
+        // Find the bookie record by matchId
+        const bookie = await Bookie.findOne({ matchId: matchId }).populate('bookieId'); // Populating the referenced user (if needed)
+
+        if (!bookie) {
+            return res.status(404).json({
+                msg: 'No bookie found for the given match ID'
+            });
+        }
+
+        return res.status(200).json({
+            msg: 'Bookie record retrieved successfully',
+            data: bookie
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error fetching bookie record',
+            error: error.message
+        });
+    }
+};
+
+module.exports = {
+    getBookieByMatchId
+};

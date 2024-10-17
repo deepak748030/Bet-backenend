@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createLocalMatch, getAllLocalMatches } = require('../mxcontrollers/localMatchController');
+const { createLocalMatch, getAllLocalMatches, getLocalMatchByMatchId } = require('../mxcontrollers/localMatchController');
 const { createLocalMatchScorecard } = require('../mxcontrollers/localMatchScoreCardController');
 const { createLocalSquad } = require('../mxcontrollers/localSquadController');
 
@@ -10,6 +10,8 @@ router.post('/localmatch', createLocalMatch);
 
 // GET request to fetch all local matches
 router.get('/localmatches', getAllLocalMatches);
+
+router.get('/localmatch/:matchId', getLocalMatchByMatchId);
 
 
 // POST route to create a new local match scorecard

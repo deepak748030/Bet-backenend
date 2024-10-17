@@ -70,4 +70,29 @@ const getAllLocalMatches = async (req, res) => {
     }
 };
 
-module.exports = { createLocalMatch, getAllLocalMatches };
+const getLocalMatchByMatchId = async (req, res) => {
+    try {
+        const { matchId } = req.params;
+
+        // Find the local match by matchId
+        const localMatch = await LocalMatch.findOne({ matchId: matchId });
+
+        if (!localMatch) {
+            return res.status(404).json({
+                msg: 'Local match not found for the given match ID'
+            });
+        }
+
+        return res.status(200).json({
+            msg: 'Local match retrieved successfully',
+            data: localMatch
+        });
+    } catch (error) {
+        return res.status(500).json({
+            msg: 'Error fetching local match',
+            error: error.message
+        });
+    }
+};
+
+module.exports = { createLocalMatch, getAllLocalMatches, getLocalMatchByMatchId };

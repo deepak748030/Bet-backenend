@@ -48,7 +48,7 @@ const getBookieByMatchId = async (req, res) => {
         const { matchId } = req.params;
 
         // Find the bookie record by matchId
-        const bookie = await Bookie.findOne({ matchId: matchId }).populate('bookieId'); // Populating the referenced user (if needed)
+        const bookie = await Bookie.findOne({ matchId: matchId })// Populating the referenced user (if needed)
 
         if (!bookie) {
             return res.status(404).json({
